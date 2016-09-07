@@ -28,6 +28,7 @@
 //========================================================================
 
 #include <glad/glad.h>
+#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
 #include "portaudio.h"
@@ -69,13 +70,27 @@ Queue *drop_q(Queue *o) { if(!o) { printf("ERROR: queue is empty.\n"); }
   else { Queue *a = o->n; /*free(a->sc.s.samp);*/ free(a); return o->n; } }
 Queue *get_q(int a, Queue *q) { for(;a>0&&q;q=q->n,a--); return q; }
 
-void setup(GLFWwindow *win) {
+void perspective(GLdouble fovy, GLdouble asp, GLdouble znear, GLdouble zfar) {
+  const GLdouble pi = 3.14159265358979323846264338327;
+  GLdouble top = znear*tan(pi/360.*fovy);
+  glFrustum(-top*asp,top*asp,-top,top,znear,zfar); }
+
+/*void init_gl(GLFWwindow *win) {
   float ratio; int width, height; glfwGetFramebufferSize(win, &width, &height);
   ratio = width / (float) height; glViewport(0,0,width,height);
   glClear(GL_COLOR_BUFFER_BIT);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity(); glOrtho(0,1,0,1,0,1); glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity(); }
+  glLoadIdentity(); }*/
+void rsz(GLFWwindow *win, int w, int h) { glViewport(0,0,w,h);
+  glMatrixMode(GL_PROJECTION); glLoadIdentity();
+  perspective(45,w/(float)h,0.1,100); glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+  glFlush(); }
+void init_gl(GLFWwindow *win) { glShadeModel(GL_SMOOTH);
+  glClearColor(0,0,0,0); glClearDepth(1); glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL); glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST);
+  glEnable(GL_LIGHTING); glEnable(GL_LIGHT0); int w, h; glfwGetFramebufferSize(win,&w,&h);
+  rsz(win,w,h); }
 
 static void error_callback(int error, const char* description) {
   fprintf(stderr, "Error: %s\n", description); }
@@ -139,7 +154,8 @@ void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
-void paint(GLFWwindow *win, GState g) { glColor3f(1.0,0.0,0.0);
+void paint(GLFWwindow *win, GState g) { glLoadIdentity();
+  glTranslatef(0,0,-1.5); glColor3f(1.0,0.0,0.0);
   glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,0); glVertex3f(g.pl.x+0.1,g.pl.y,0);
                      glVertex3f(g.pl.x+0.1,g.pl.y+0.1,0); glVertex3f(g.pl.x,g.pl.y+0.1,0);
   glEnd(); }
@@ -174,9 +190,10 @@ int main(void) {
     glfwSwapInterval(1);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    init_gl(window);
     //glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
-      glClear(GL_COLOR_BUFFER_BIT); paint(window,g); 
+      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,g); 
       procInput(&g,&lk,window); glfwSwapBuffers(window);
       glfwPollEvents(); }
     //error:
