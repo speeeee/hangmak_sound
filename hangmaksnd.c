@@ -154,31 +154,11 @@ KState getInput(GLFWwindow *win) { KState n;
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
-void procInput(GState *g, Keys *k, GLFWwindow *win) { KState a =  getInput(win);
-  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; k->lk = a; }
+void procInput(GState *g, KState *lk, GLFWwindow *win) { KState a =  getInput(win);
+  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; *lk = a; }
 
 int main(void) {
-    // keys to be used when checking for input:
-    int keys[KC] = { GLFW_KEY_D, GLFW_KEY_A, GLFW_KEY_W, GLFW_KEY_S };
-    KState lk = { 0,0 };
-    Keys ks = { lk, NULL };
-    GState g = (GState) { (Player) { 0, 0 } };
-
-    //PaStream *stream;
-    //PaStreamParameters oP;
-    /*Snd snd; snd.samp = calloc((snd.sz = 44100),sizeof(float));
-    for(int i=0;i<snd.sz;i++) { snd.samp[i] = (float) sin(440*((double)i/44100.)*M_PI*2.); }
-    snd.lp = snd.rp = 0; GState g = { stream, snd, NULL };*/
-
-    /*Pa_Initialize();
-    oP.device = Pa_GetDefaultOutputDevice();
-    oP.channelCount = 2; oP.sampleFormat = paFloat32;
-    oP.suggestedLatency = Pa_GetDeviceInfo(oP.device)->defaultLowOutputLatency;
-    oP.hostApiSpecificStreamInfo = NULL;
-
-    Pa_OpenStream(&g.str,NULL,&oP,SAMPLE_RATE,64,paClipOff,detCallback,&g.total);*/
-    //nstr(g.total,oP,g.str);
-    //Pa_StartStream(g.str);
+    GState g = (GState) { (Player) { 0, 0 } }; KState lk = { 0, 0 };
     GLFWwindow* window;
 
     glfwSetErrorCallback(error_callback);
@@ -197,7 +177,7 @@ int main(void) {
     //glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT); paint(window,g); 
-      procInput(&g,&ks,window); glfwSwapBuffers(window);
+      procInput(&g,&lk,window); glfwSwapBuffers(window);
       glfwPollEvents(); }
     //error:
     //Pa_StopStream(stream); Pa_CloseStream(stream); Pa_Terminate();
