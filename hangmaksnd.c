@@ -51,8 +51,8 @@
 #define SILENT  0
 #define PLAYING 1
 
-typedef struct { GLfloat x; GLfloat y; } Player;
-typedef struct { GLfloat x; GLfloat y; } KState;
+typedef struct { GLfloat x; GLfloat y; GLfloat z; } Player;
+typedef struct { GLfloat x; GLfloat y; GLfloat z; } KState;
 
 typedef struct { int sz; float *samp; int lp; int rp; } Snd;
 typedef struct { KState lk; int keys[KC]; } Keys;
@@ -62,13 +62,21 @@ typedef struct { Player pl; } GState;
 //data dat; PaStream *stream;
 //PaStreamParameters oP;
 
+#define warray_(N,X,F,...) GLfloat *N = X; (F)(__VA_ARGS__,X); free(N);
+// where (GLfloat *X), ((GLFloat * -> void) *F), ...
 // more of a priority queue.
+
 Queue *push_q(Sched sc, Queue *o) { Queue *n = malloc(sizeof(Queue));
   n->sc = sc; n->n = NULL; if(!o) { return n; }
   else { Queue *i = o; for(;i&&sc.time > i->sc.time;i = i->n); i->n = n; return o; } }
 Queue *drop_q(Queue *o) { if(!o) { printf("ERROR: queue is empty.\n"); }
   else { Queue *a = o->n; /*free(a->sc.s.samp);*/ free(a); return o->n; } }
 Queue *get_q(int a, Queue *q) { for(;a>0&&q;q=q->n,a--); return q; }
+
+// remember to free.
+// WARNING: arguments passed to the function MUST be GLdoubles.
+GLfloat *farr(int sz, ...) { va_list vl; va_start(vl,sz); GLfloat *a = malloc(sz*sizeof(GLfloat));
+  for(int i=0;i<sz;i++) { a[i] = (GLfloat)va_arg(vl,GLdouble); } va_end(vl); return a; }
 
 void perspective(GLdouble fovy, GLdouble asp, GLdouble znear, GLdouble zfar) {
   const GLdouble pi = 3.14159265358979323846264338327;
@@ -155,9 +163,9 @@ void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
 void paint(GLFWwindow *win, GState g) { glLoadIdentity();
-  glTranslatef(0,0,-1.5); glColor3f(1.0,0.0,0.0);
-  glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,0); glVertex3f(g.pl.x+0.1,g.pl.y,0);
-                     glVertex3f(g.pl.x+0.1,g.pl.y+0.1,0); glVertex3f(g.pl.x,g.pl.y+0.1,0);
+  glTranslatef(0,0,-1.5); warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+  glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,g.pl.z); glVertex3f(g.pl.x+0.1,g.pl.y,g.pl.z);
+                     glVertex3f(g.pl.x+0.1,g.pl.y+0.1,g.pl.z); glVertex3f(g.pl.x,g.pl.y+0.1,g.pl.z);
   glEnd(); }
 
 int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
@@ -166,15 +174,16 @@ int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
 // all key processing happens here.
 KState getInput(GLFWwindow *win) { KState n;
   n.x = pressed(win,GLFW_KEY_D)-pressed(win,GLFW_KEY_A);
-  n.y = pressed(win,GLFW_KEY_W)-pressed(win,GLFW_KEY_S); return n; }
+  n.y = pressed(win,GLFW_KEY_W)-pressed(win,GLFW_KEY_S);
+  n.z = pressed(win,GLFW_KEY_R)-pressed(win,GLFW_KEY_F); return n; }
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, KState *lk, GLFWwindow *win) { KState a =  getInput(win);
-  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; *lk = a; }
+  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01; *lk = a; }
 
 int main(void) {
-    GState g = (GState) { (Player) { 0, 0 } }; KState lk = { 0, 0 };
+    GState g = (GState) { (Player) { 0, 0, 0 } }; KState lk = { 0, 0, 0 };
     GLFWwindow* window;
 
     glfwSetErrorCallback(error_callback);
