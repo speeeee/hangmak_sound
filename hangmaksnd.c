@@ -63,8 +63,11 @@ typedef struct { Player pl; } GState;
 //PaStreamParameters oP;
 
 const char *ver_v = "uniform float pos; void main(void) { vec4 v = vec4(gl_Vertex);\n"
-  "v.z = sin(pos); gl_Position = gl_ModelViewProjectionMatrix * v; }";
-const char *frag_v = "void main(void) { gl_FragColor = vec4(1.0,0.0,0.0,1.0); }";
+  "float posn = pos + v.x * 15.0;"
+  "v.z = sin(posn); gl_Position = gl_ModelViewProjectionMatrix * v;"
+  "gl_FrontColor = gl_Color; }";
+const char *frag_v = "void main(void) { vec4 v = vec4(gl_Color);"
+  "gl_FragColor = v; }";
 
 static GLuint mk_shader(GLenum type, const char *src) {
   GLuint shader = glCreateShader(type); glShaderSource(shader, 1, (const GLchar **)&src, NULL);
@@ -176,6 +179,7 @@ void psound_det(PaStream *stream) {
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glTranslatef(0,0,-1.5); //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+  glColor4f(1.0,0.0,0.0,1.0);
   GLfloat pos = glGetUniformLocation(prog,"pos"); glUniform1f(pos,g.pl.x*15);
   glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,g.pl.z); glVertex3f(g.pl.x+0.1,g.pl.y,g.pl.z);
                      glVertex3f(g.pl.x+0.1,g.pl.y+0.1,g.pl.z); glVertex3f(g.pl.x,g.pl.y+0.1,g.pl.z);
