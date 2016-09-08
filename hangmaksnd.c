@@ -62,6 +62,18 @@ typedef struct { Player pl; } GState;
 //data dat; PaStream *stream;
 //PaStreamParameters oP;
 
+const char *ver_v = "uniform float pos; void main(void) { vec4 v = vec4(gl_Vertex);\n"
+  "v.z = sin(pos); gl_Position = gl_ModelViewProjectionMatrix * v; }";
+const char *frag_v = "void main(void) { gl_FragColor = vec4(1.0,0.0,0.0,1.0); }";
+
+static GLuint mk_shader(GLenum type, const char *src) {
+  GLuint shader = glCreateShader(type); glShaderSource(shader, 1, (const GLchar **)&src, NULL);
+  glCompileShader(shader); return shader; }
+static GLuint mk_shader_program(const char *vs_src, const char *fs_src) { GLuint prog = 0u;
+  GLuint vs = 0u; GLuint fs = 0u; vs = mk_shader(GL_VERTEX_SHADER, vs_src);
+  fs = mk_shader(GL_FRAGMENT_SHADER, fs_src); prog = glCreateProgram();
+  glAttachShader(prog,vs); glAttachShader(prog,fs); glLinkProgram(prog); return prog; }
+
 #define warray_(N,X,F,...) GLfloat *N = X; (F)(__VA_ARGS__,X); free(N);
 // where (GLfloat *X), ((GLFloat * -> void) *F), ...
 // more of a priority queue.
@@ -162,8 +174,9 @@ void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
-void paint(GLFWwindow *win, GState g) { glLoadIdentity();
-  glTranslatef(0,0,-1.5); warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
+  glTranslatef(0,0,-1.5); //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+  GLfloat pos = glGetUniformLocation(prog,"pos"); glUniform1f(pos,g.pl.x*15);
   glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,g.pl.z); glVertex3f(g.pl.x+0.1,g.pl.y,g.pl.z);
                      glVertex3f(g.pl.x+0.1,g.pl.y+0.1,g.pl.z); glVertex3f(g.pl.x,g.pl.y+0.1,g.pl.z);
   glEnd(); }
@@ -198,11 +211,14 @@ int main(void) {
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
+    GLuint prog = 0u; prog = mk_shader_program(ver_v, frag_v);
+    glUseProgram(prog);
+
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     init_gl(window);
     //glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
-      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,g); 
+      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g); 
       procInput(&g,&lk,window); glfwSwapBuffers(window);
       glfwPollEvents(); }
     //error:
