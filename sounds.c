@@ -19,7 +19,7 @@ typedef int (*IFun)(int, int);
 
 // Time -> Double -> Snd -> MaybeI Int
 #define pitch(T,D,S) \
-  (__IND = ((double)(T)+(D)))>(S).sz? \
+  (__IND = ((double)(T)*(D)))>(S).sz? \
     maybeI(0, 0):maybeI((S).data[(int)__IND], 1)
 
 MaybeI fmap(MaybeI a, MaybeI b, IFun f) {
