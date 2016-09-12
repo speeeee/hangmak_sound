@@ -19,11 +19,17 @@ typedef int (*IFun)(int, int);
 
 // the callback stops once Nothing has been found during the call.
 
+// mapc is for functions like lpf that reference the buffer.
+#define map(B,F,...) for(int t=0;t<(B).sz;t++) { (B).data[t] = (F)((B).data[t],__VA_ARGS__); }
+#define mapc(B,F,...) for(int t=0;t<(B).sz;t++) { (B).data[t] = (F)(t,(B),__VA_ARGS__); }
 // Time -> Double -> Snd -> MaybeI Int
 #define pitch(T,D,S) \
   (__IND = ((double)(T)*(D)))>(S).sz? \
     maybeI(0, 0):maybeI((S).data[(int)__IND], 1)
 int square(int a, int p) { return p * ((a>0)-(a<0)); }
+int lpf(int t, Snd a, float s) {
+  return (a.data[t-1] - (int)((float)(-a.data[t]+a.data[t-1])*s)); }
+int amp(int a, float perc) { return (int)a*perc; }
 
 int add(int a, int b) { a+b; }
 int sub(int a, int b) { a-b; }
@@ -46,19 +52,14 @@ Snd in_f(const char *n, int sz, int nchan) { int *buffer = malloc(sz*sizeof(int)
 int peak(Snd a) { int p=0; for(int i=0;i<a.sz;i++) { if(abs(a.data[i])>p) { p=a.data[i]; } }
   return abs(p); }
 
-void lpf(Snd a, double mul) { for(int i=1;i<a.sz;i++) {
-  a.data[i] = (int)((double)(a.data[i]+a.data[i-1])/2); } }
-
-void amp(Snd a, float perc) { for(int i=0;i<a.sz;i++) { a.data[i] = (int)a.data[i]*perc; } }
-
 // context-based functions (pitch) vs linear functions (add)
 /* context-based functions require buffers to work due to needing context.  All context-based
      functions return MaybeI.  Linear functions need only the items they are given.
      All linear functions return int (and can be used with fmap for MaybeI). */
 int main(int argc, char **argv) { Snd key = in_f("sine.wav",22050,1);
   SNDFILE *out = wav_snd("target.wav",44100,1,SFM_WRITE); MaybeI res = maybeI(0,0);
-  double __IND = 0; int p = peak(key);
+  double __IND = 0; int p = peak(key); map(key,square,p); mapc(key,lpf,0.25);
   //for(int t=0;(res = pitch(t,2,key)).exists;t++) { sf_write_int(out,&res.a,1); }
-  for(int t=0;t<key.sz&&(res = maybeI(square(key.data[t],p),1)).exists;t++) {
+  for(int t=0;t<key.sz&&(res = maybeI(key.data[t],1)).exists;t++) {
     sf_write_int(out,&res.a,1); }
   sf_close(out); return 0; }
