@@ -1,32 +1,3 @@
-//========================================================================
-// UTF-8 window title test
-// Copyright (c) Camilla Berglund <elmindreda@glfw.org>
-//
-// This software is provided 'as-is', without any express or implied
-// warranty. In no event will the authors be held liable for any damages
-// arising from the use of this software.
-//
-// Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter it and redistribute it
-// freely, subject to the following restrictions:
-//
-// 1. The origin of this software must not be misrepresented; you must not
-//    claim that you wrote the original software. If you use this software
-//    in a product, an acknowledgment in the product documentation would
-//    be appreciated but is not required.
-//
-// 2. Altered source versions must be plainly marked as such, and must not
-//    be misrepresented as being the original software.
-//
-// 3. This notice may not be removed or altered from any source
-//    distribution.
-//
-//========================================================================
-//
-// This test sets a UTF-8 window title
-//
-//========================================================================
-
 #include <glad/glad.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
@@ -62,7 +33,7 @@ typedef struct { GLfloat x; GLfloat y; GLfloat z; } KState;
 typedef struct { Snd a; int lp; int rp; } SndState;
 typedef struct { float time; Snd s; int stat; } Sched;
 typedef struct Queue { Sched sc; struct Queue *n; } Queue;
-typedef struct { Player pl; int t; } GState;
+typedef struct { Player pl; KState lk; int t; } GState;
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -187,8 +158,8 @@ KState getInput(GLFWwindow *win) { KState n;
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
-void procInput(GState *g, KState *lk, GLFWwindow *win) { KState a =  getInput(win);
-  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01; *lk = a; }
+void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
+  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01; g->lk = a; }
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
                        it will just return the sample of the sine at the GState's time).
@@ -196,7 +167,7 @@ void procInput(GState *g, KState *lk, GLFWwindow *win) { KState a =  getInput(wi
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
 int main(void) {
-    GState g = (GState) { (Player) { 0, 0, 0 } }; KState lk = { 0, 0, 0 };
+    GState g = (GState) { (Player) { 0, 0, 0 }, (KState) { 0, 0, 0 }, 0 };
     GLFWwindow* window;
 
     //Pa_Initialize();
@@ -220,7 +191,7 @@ int main(void) {
     //glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g); 
-      procInput(&g,&lk,window); glfwSwapBuffers(window);
+      procInput(&g,window); glfwSwapBuffers(window);
       glfwPollEvents(); }
     //error:
     //Pa_StopStream(stream); Pa_CloseStream(stream); Pa_Terminate();
