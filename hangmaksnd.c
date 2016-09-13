@@ -33,11 +33,14 @@
 
 #include "portaudio.h"
 #include <math.h>
+#include <sndfile.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+
+#include "sounds.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -51,27 +54,37 @@
 #define SILENT  0
 #define PLAYING 1
 
+typedef int (*TFun)(int, ...);
+
 typedef struct { GLfloat x; GLfloat y; GLfloat z; } Player;
 typedef struct { GLfloat x; GLfloat y; GLfloat z; } KState;
 
-typedef struct { int sz; float *samp; int lp; int rp; } Snd;
-typedef struct { KState lk; int keys[KC]; } Keys;
+typedef struct { Snd a; int lp; int rp; } SndState;
 typedef struct { float time; Snd s; int stat; } Sched;
 typedef struct Queue { Sched sc; struct Queue *n; } Queue;
-typedef struct { Player pl; } GState;
+typedef struct { Player pl; int t; } GState;
+
+typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
 //PaStreamParameters oP;
 
-const char *ver_v = "uniform float pos; void main(void) { vec4 v = vec4(gl_Vertex);\n"
-  "float posn = pos + v.x * 15.0;"
-  "v.z = sin(posn); gl_Position = gl_ModelViewProjectionMatrix * v;"
-  "gl_FrontColor = gl_Color; }";
+/*const char *ver_v = "uniform float x; uniform float y; void main(void) { vec4 v = vec4(gl_Vertex);\n"
+  "vec4 col = vec4(gl_Color); float dist = pow(pow(x+v.x,2.0)+pow(y+v.y,2.0),0.5);"
+  "vec4 nc = vec4(dist/col.x*5.0,dist/col.y*5.0,0.0,1.0);"
+  "gl_Position = gl_ModelViewProjectionMatrix * v;"
+  "gl_FrontColor = nc; }";*/
+const char *ver_v = "void main(void) { vec4 v = vec4(gl_Vertex); vec4 c = vec4(gl_Color);"
+  "gl_FrontColor = c; gl_Position = gl_ModelViewProjectionMatrix*v; }";
 const char *frag_v = "void main(void) { vec4 v = vec4(gl_Color);"
   "gl_FragColor = v; }";
 
 static GLuint mk_shader(GLenum type, const char *src) {
+  GLuint ok; GLsizei ll; char info_log[8192];
   GLuint shader = glCreateShader(type); glShaderSource(shader, 1, (const GLchar **)&src, NULL);
-  glCompileShader(shader); return shader; }
+  glCompileShader(shader); glGetShaderiv(shader, GL_COMPILE_STATUS, &ok); 
+  if(ok != GL_TRUE) { glGetShaderInfoLog(shader, 8192, &ll, info_log);
+    fprintf(stderr, "ERROR: \n%s\n\n", info_log); glDeleteShader(shader); shader = 0u; }
+  return shader; }
 static GLuint mk_shader_program(const char *vs_src, const char *fs_src) { GLuint prog = 0u;
   GLuint vs = 0u; GLuint fs = 0u; vs = mk_shader(GL_VERTEX_SHADER, vs_src);
   fs = mk_shader(GL_FRAGMENT_SHADER, fs_src); prog = glCreateProgram();
@@ -121,22 +134,6 @@ static void error_callback(int error, const char* description) {
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height); }
 
-/*void key_callback(GLFWwindow *win, int key, int scancode, int action, int mods) {
-  if(key == GLFW_KEY_A && action == GLFW_PRESS) {
-    Pa_StartStream(stream); } else { Pa_StopStream(stream); } }*/
-
-/*static int pCallBack(const void *inputBuffer, void *outputBuffer, unsigned long fpb,
-                     const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
-                     void *userData) {
-  data *d = (data *)userData;
-  float *out = (float *)outputBuffer;
-  unsigned long i;
-
-  for(i=0;i<fpb;i++) { *out++ = d->sine[d->lp]; *out++ = d->sine[d->rp];
-    d->lp += 1; d->rp += 1;
-    if(d->lp >= 44100) { d->lp -= 44100; }
-    if(d->rp >= 44100) { d->rp -= 44100; } } return paContinue; }*/
-
 int any_eq(int a, int *b, int fro, int to) { int i; for(int i=fro;i<to&&b[i]!=a;i++);
   return i>=to?-1:i; }
 
@@ -144,13 +141,13 @@ int get_amt_playing(Queue *q) { int i; for(i=0;q&&q->sc.stat;i++,q=q->n); return
 int play_s(Queue *q, float t) { int i;
   for(i=0;q&&t>=q->sc.time&&!q->sc.stat;q=q->n,i++) { q->sc.stat = PLAYING; } return i; }
 
-void out_q(float *out, Queue **d) { *out += (*d)->sc.s.samp[(*d)->sc.s.lp++];
-  *(out+1) += (*d)->sc.s.samp[(*d)->sc.s.rp++]; }
+//void out_q(float *out, Queue **d) { *out += (*d)->sc.s.samp[(*d)->sc.s.lp++];
+//  *(out+1) += (*d)->sc.s.samp[(*d)->sc.s.rp++]; }
   //if((*d)->sc.s.lp >= (*d)->sc.s.sz || (*d)->sc.s.rp >= (*d)->sc.s.sz) {
   //  *d = drop_q(*d); } }
 
 // This callback will terminate when the supplied sample ends.
-int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
+/*int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 const PaStreamCallbackTimeInfo *tInfo, PaStreamCallbackFlags statFlags,
                 void *userData) {
   Queue *d = (Queue *)userData; float *out = (float *)outputBuffer;
@@ -158,29 +155,23 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
 
   for(int i=0;i<fpb;i++) { out[0] = 0; out[1] = 0;
     for(int e=0;e<amt_p;e++,d=d->n) { out_q(out,&d); } *out++; *out++; }
-    //*out++ = d->samp[d->lp++]; *out++ = d->samp[d->rp++];
+    out++ = d->samp[d->lp++]; *out++ = d->samp[d->rp++];
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
     //   up where this left off.
     //if(d->lp >= d->sz || d->rp >= d->sz) { d->lp = d->rp = 0; return paComplete; } }
-  return paContinue; }
+  return paContinue; }*/
 
-Snd snd_copy(Snd a) { float *d = malloc(a.sz*sizeof(float));
-  memcpy(d,a.samp,a.sz*sizeof(float)); return (Snd) { a.sz, d, a.lp, a.rp }; }
-void to_down(Snd *a) { Snd n; n.lp = n.rp = 0; n.sz = a->sz;
-  n.samp = malloc(n.sz*sizeof(float));
-  for(int i=0;i<n.sz;i++) { n.samp[i] = a->samp[i]; } free(a->samp); *a = n; }
-void in_snd(Snd *a, Snd b) { Snd c = snd_copy(b); free(a->samp); *a = c; }
-
-void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
-  Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&snd); }
+/*void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
+  Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&snd); }*
 void psound_det(PaStream *stream) {
-  if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
+  if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }*/
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glTranslatef(0,0,-1.5); //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
   glColor4f(1.0,0.0,0.0,1.0);
-  GLfloat pos = glGetUniformLocation(prog,"pos"); glUniform1f(pos,g.pl.x*15);
+  GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
+  GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
   glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,g.pl.z); glVertex3f(g.pl.x+0.1,g.pl.y,g.pl.z);
                      glVertex3f(g.pl.x+0.1,g.pl.y+0.1,g.pl.z); glVertex3f(g.pl.x,g.pl.y+0.1,g.pl.z);
   glEnd(); }
@@ -198,11 +189,17 @@ KState getInput(GLFWwindow *win) { KState n;
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, KState *lk, GLFWwindow *win) { KState a =  getInput(win);
   g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01; *lk = a; }
-
+/* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
+     an output sample (for example, if the state function is to return a sine function, then
+                       it will just return the sample of the sine at the GState's time).
+     The function would usually have a (Predicate,SndState) array.  When sounds are to be added,
+     the PortAudio stream stops and the new sound is added to the array with a given predicate.
+     All predicates take a GState as their input. */
 int main(void) {
     GState g = (GState) { (Player) { 0, 0, 0 } }; KState lk = { 0, 0, 0 };
     GLFWwindow* window;
 
+    //Pa_Initialize();
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
