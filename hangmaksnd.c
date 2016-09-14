@@ -118,25 +118,24 @@ int play_s(Queue *q, float t) { int i;
   //  *d = drop_q(*d); } }
 
 // This callback will terminate when the supplied sample ends.
-/*int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
+int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 const PaStreamCallbackTimeInfo *tInfo, PaStreamCallbackFlags statFlags,
                 void *userData) {
-  Queue *d = (Queue *)userData; float *out = (float *)outputBuffer;
-  int amt_p = get_amt_playing(d); amt_p += play_s(get_q(amt_p,d),tInfo->currentTime);
-
-  for(int i=0;i<fpb;i++) { out[0] = 0; out[1] = 0;
-    for(int e=0;e<amt_p;e++,d=d->n) { out_q(out,&d); } *out++; *out++; }
-    out++ = d->samp[d->lp++]; *out++ = d->samp[d->rp++];
+  GState *g = (GState *)userData; float *out = (float *)outputBuffer;
+  int t = g->t;
+  for(;t<g->t+64;t++) { if(g->lk.x||g->lk.y) {
+    float n = sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE)); *out++ = n; *out++ = n; }
+    else { *out++ = 0; *out++ = 0; } }
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
     //   up where this left off.
     //if(d->lp >= d->sz || d->rp >= d->sz) { d->lp = d->rp = 0; return paComplete; } }
-  return paContinue; }*/
+  g->t = t; return paContinue; }
 
-/*void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
-  Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&snd); }*
+void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
+  Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&snd); }
 void psound_det(PaStream *stream) {
-  if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }*/
+  if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glTranslatef(0,0,-1.5); //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
@@ -166,12 +165,20 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      The function would usually have a (Predicate,SndState) array.  When sounds are to be added,
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
-int main(void) {
+int main(void) { PaStreamParameters oP; PaStream *stream;
     GState g = (GState) { (Player) { 0, 0, 0 }, (KState) { 0, 0, 0 }, 0 };
     GLFWwindow* window;
 
-    //Pa_Initialize();
+    Pa_Initialize();
     glfwSetErrorCallback(error_callback);
+
+    oP.device = Pa_GetDefaultOutputDevice();
+    oP.channelCount = 2;
+    oP.sampleFormat = paFloat32;
+    oP.suggestedLatency = Pa_GetDeviceInfo(oP.device)->defaultLowOutputLatency;
+    oP.hostApiSpecificStreamInfo = NULL;
+
+    Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&g);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -189,12 +196,13 @@ int main(void) {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     init_gl(window);
     //glfwSetKeyCallback(window, key_callback);
+    psound_det(stream);
     while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g); 
       procInput(&g,window); glfwSwapBuffers(window);
       glfwPollEvents(); }
-    //error:
-    //Pa_StopStream(stream); Pa_CloseStream(stream); Pa_Terminate();
+    error:
+    Pa_StopStream(stream); Pa_CloseStream(stream); Pa_Terminate();
 
     glfwTerminate();
     exit(EXIT_SUCCESS);
