@@ -139,7 +139,7 @@ void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
-GLfloat deg_rad(GLfloat a) { a*M_PI/180; }
+GLfloat deg_rad(GLfloat a) { return a*M_PI/180; }
 Player cross(Player a, Player b) {
   return (Player) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
@@ -151,7 +151,9 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
                   ,cos(deg_rad(g.ca.cyz))*cos(deg_rad(g.ca.cxz)));
   glRotatef(pow(pow(g.ca.cxz,2)+pow(g.ca.cyz,2),1./2)
            ,c.x,c.y,c.z);*/
-  glRotatef(g.ca.cxz,0,cos(M_PI/6),sin(M_PI/6)); glRotatef(30,1,0,0);
+  glRotatef(g.ca.cxz,0,cos(deg_rad(g.ca.cyz)),sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
+  //glTranslatef(-sin(deg_rad(g.ca.cxz)),0,-cos(deg_rad(g.ca.cxz)));
+  //glRotatef(-g.ca.cxz,0,1,0); glRotatef(-g.ca.cyz,1,0,0); 
   //glRotatef(g.ca.cxz,0,cos(deg_rad(g.ca.cyz)),sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
   //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
   glColor4f(1.0,0.0,0.0,1.0);
