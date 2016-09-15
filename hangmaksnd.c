@@ -125,7 +125,7 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 void *userData) {
   GState *g = (GState *)userData; float *out = (float *)outputBuffer;
   int t = g->t;
-  for(;t<g->t+64;t++) { if(g->lk.x||g->lk.y) {
+  for(;t<g->t+64;t++) { if(/*g->lk.x||g->lk.y*/0) {
     float n = sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE)); *out++ = n; *out++ = n; }
     else { *out++ = 0; *out++ = 0; } }
     // the stream can be cut prematurely outside, and the phase values will be left in their
@@ -145,23 +145,18 @@ Player cross(Player a, Player b) {
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glTranslatef(0,0,-1.5);
-  // assume radius as 1.
-  /*Player c = vect3(sin(deg_rad(g.ca.cyz))*sin(deg_rad(g.ca.cxz))
-                  ,sin(deg_rad(g.ca.cyz))
-                  ,cos(deg_rad(g.ca.cyz))*cos(deg_rad(g.ca.cxz)));
-  glRotatef(pow(pow(g.ca.cxz,2)+pow(g.ca.cyz,2),1./2)
-           ,c.x,c.y,c.z);*/
-  glRotatef(g.ca.cxz,0,cos(deg_rad(g.ca.cyz)),sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
-  //glTranslatef(-sin(deg_rad(g.ca.cxz)),0,-cos(deg_rad(g.ca.cxz)));
-  //glRotatef(-g.ca.cxz,0,1,0); glRotatef(-g.ca.cyz,1,0,0); 
-  //glRotatef(g.ca.cxz,0,cos(deg_rad(g.ca.cyz)),sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
-  //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+  glRotatef(g.ca.cxz,0,-cos(deg_rad(g.ca.cyz)),-sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
+
   glColor4f(1.0,0.0,0.0,1.0);
-  GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
-  GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
+  //GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
+  //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
   glBegin(GL_QUADS);
-    glVertex3f(g.pl.x-0.05,g.pl.y-0.05,g.pl.z); glVertex3f(g.pl.x+0.05,g.pl.y-0.05,g.pl.z);
-    glVertex3f(g.pl.x+0.05,g.pl.y+0.05,g.pl.z); glVertex3f(g.pl.x-0.05,g.pl.y+0.05,g.pl.z);
+    glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
+    glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
+
+    glColor4f(0.2989,0.5,0.411,1.0);
+    glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
+    glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
   glEnd(); }
 
 int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
@@ -170,15 +165,19 @@ int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
 // all key processing happens here.
 KState getInput(GLFWwindow *win) { KState n;
   n.x = pressed(win,GLFW_KEY_D)-pressed(win,GLFW_KEY_A);
-  n.y = pressed(win,GLFW_KEY_W)-pressed(win,GLFW_KEY_S);
-  n.z = pressed(win,GLFW_KEY_R)-pressed(win,GLFW_KEY_F); 
+  n.z = pressed(win,GLFW_KEY_W)-pressed(win,GLFW_KEY_S);
+  n.y = pressed(win,GLFW_KEY_R)-pressed(win,GLFW_KEY_F); 
   n.tht = pressed(win,GLFW_KEY_UP)-pressed(win,GLFW_KEY_DOWN);
   n.phi = pressed(win,GLFW_KEY_RIGHT)-pressed(win,GLFW_KEY_LEFT); return n; }
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
-  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01;
+  // to be simplified.
+  GLfloat cx = cos(deg_rad(g->ca.cxz)-M_PI/2); GLfloat cz = sin(deg_rad(g->ca.cxz)-M_PI/2);
+  GLfloat cx2 = sin(deg_rad(g->ca.cxz)-M_PI); GLfloat cz2 = cos(deg_rad(g->ca.cxz)-M_PI);
+  g->pl.x += -a.z*0.01*cx-a.x*0.01*cz2;
+  g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz-a.x*0.01*cx2;
   g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
