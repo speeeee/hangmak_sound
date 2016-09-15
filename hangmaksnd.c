@@ -28,12 +28,14 @@
 typedef int (*TFun)(int, ...);
 
 typedef struct { GLfloat x; GLfloat y; GLfloat z; } Player;
-typedef struct { GLfloat x; GLfloat y; GLfloat z; } KState;
+Player vect3(GLfloat x, GLfloat y, GLfloat z) { return (Player) { x, y, z }; }
+typedef struct { GLfloat cxz; GLfloat cyz; } Camera;
+typedef struct { GLfloat x; GLfloat y; GLfloat z; GLfloat tht; GLfloat phi; } KState;
 
 typedef struct { Snd a; int lp; int rp; } SndState;
 typedef struct { float time; Snd s; int stat; } Sched;
 typedef struct Queue { Sched sc; struct Queue *n; } Queue;
-typedef struct { Player pl; KState lk; int t; } GState;
+typedef struct { Player pl; Camera ca; KState lk; int t; } GState;
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -137,13 +139,27 @@ void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
+GLfloat deg_rad(GLfloat a) { a*M_PI/180; }
+Player cross(Player a, Player b) {
+  return (Player) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
+
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
-  glTranslatef(0,0,-1.5); //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
+  glTranslatef(0,0,-1.5);
+  // assume radius as 1.
+  /*Player c = vect3(sin(deg_rad(g.ca.cyz))*sin(deg_rad(g.ca.cxz))
+                  ,sin(deg_rad(g.ca.cyz))
+                  ,cos(deg_rad(g.ca.cyz))*cos(deg_rad(g.ca.cxz)));
+  glRotatef(pow(pow(g.ca.cxz,2)+pow(g.ca.cyz,2),1./2)
+           ,c.x,c.y,c.z);*/
+  glRotatef(g.ca.cxz,0,cos(M_PI/6),sin(M_PI/6)); glRotatef(30,1,0,0);
+  //glRotatef(g.ca.cxz,0,cos(deg_rad(g.ca.cyz)),sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
+  //warray_(COL,farr(3,1.0,0.0,0.0),glMaterialfv,GL_FRONT,GL_DIFFUSE);
   glColor4f(1.0,0.0,0.0,1.0);
   GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
   GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
-  glBegin(GL_QUADS); glVertex3f(g.pl.x,g.pl.y,g.pl.z); glVertex3f(g.pl.x+0.1,g.pl.y,g.pl.z);
-                     glVertex3f(g.pl.x+0.1,g.pl.y+0.1,g.pl.z); glVertex3f(g.pl.x,g.pl.y+0.1,g.pl.z);
+  glBegin(GL_QUADS);
+    glVertex3f(g.pl.x-0.05,g.pl.y-0.05,g.pl.z); glVertex3f(g.pl.x+0.05,g.pl.y-0.05,g.pl.z);
+    glVertex3f(g.pl.x+0.05,g.pl.y+0.05,g.pl.z); glVertex3f(g.pl.x-0.05,g.pl.y+0.05,g.pl.z);
   glEnd(); }
 
 int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
@@ -153,12 +169,15 @@ int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
 KState getInput(GLFWwindow *win) { KState n;
   n.x = pressed(win,GLFW_KEY_D)-pressed(win,GLFW_KEY_A);
   n.y = pressed(win,GLFW_KEY_W)-pressed(win,GLFW_KEY_S);
-  n.z = pressed(win,GLFW_KEY_R)-pressed(win,GLFW_KEY_F); return n; }
+  n.z = pressed(win,GLFW_KEY_R)-pressed(win,GLFW_KEY_F); 
+  n.tht = pressed(win,GLFW_KEY_UP)-pressed(win,GLFW_KEY_DOWN);
+  n.phi = pressed(win,GLFW_KEY_RIGHT)-pressed(win,GLFW_KEY_LEFT); return n; }
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
-  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01; g->lk = a; }
+  g->pl.x += a.x*0.01; g->pl.y += a.y*0.01; g->pl.z += a.z*0.01;
+  g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
                        it will just return the sample of the sine at the GState's time).
@@ -166,7 +185,7 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
 int main(void) { PaStreamParameters oP; PaStream *stream;
-    GState g = (GState) { (Player) { 0, 0, 0 }, (KState) { 0, 0, 0 }, 0 };
+    GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0 };
     GLFWwindow* window;
 
     Pa_Initialize();
