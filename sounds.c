@@ -4,8 +4,6 @@
 
 #include <sndfile.h>
 
-#include "ft.h"
-
 // change if desired.
 #define SAMPLE_RATE 44100
 
@@ -30,6 +28,10 @@ int square(int a, int p) { return p * ((a>0)-(a<0)); }
 int lpf(int t, Snd a, float s) {
   return (a.data[t-1] - (int)((float)(-a.data[t]+a.data[t-1])*s)); }
 int amp(int a, float perc) { return (int)a*perc; }
+
+/*MaybeI vdec(int t, Snd a, float p) { if(t>a.sz) { 
+  return maybeI(a.data[t]*(p-(float)(t/10)),1); }
+  else { return maybeI(0,0); } }*/
 
 int add(int a, int b) { a+b; }
 int sub(int a, int b) { a-b; }
@@ -56,10 +58,8 @@ int peak(Snd a) { int p=0; for(int i=0;i<a.sz;i++) { if(abs(a.data[i])>p) { p=a.
 /* context-based functions require buffers to work due to needing context.  All context-based
      functions return MaybeI.  Linear functions need only the items they are given.
      All linear functions return int (and can be used with fmap for MaybeI). */
-int main(int argc, char **argv) { Snd key = in_f("sine.wav",22050,1);
+/*int main(int argc, char **argv) { Snd key = in_f("sine.wav",22050,1);
   SNDFILE *out = wav_snd("target.wav",44100,1,SFM_WRITE); MaybeI res = maybeI(0,0);
-  double __IND = 0; int p = peak(key); map(key,square,p); mapc(key,lpf,0.25);
-  //for(int t=0;(res = pitch(t,2,key)).exists;t++) { sf_write_int(out,&res.a,1); }
-  for(int t=0;t<key.sz&&(res = maybeI(key.data[t],1)).exists;t++) {
-    sf_write_int(out,&res.a,1); }
-  sf_close(out); return 0; }
+  double __IND = 0; int p = peak(key); map(key,square,p); //mapc(key,lpf,0.25);
+  for(int t=0;(res = pitch(t,2,key)).exists;t++) { sf_write_int(out,&res.a,1); }
+  sf_close(out); return 0; }*/
