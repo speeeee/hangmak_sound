@@ -174,10 +174,9 @@ KState getInput(GLFWwindow *win) { KState n;
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   // to be simplified.
-  GLfloat cx = cos(deg_rad(g->ca.cxz)-M_PI/2); GLfloat cz = sin(deg_rad(g->ca.cxz)-M_PI/2);
-  GLfloat cx2 = sin(deg_rad(g->ca.cxz)-M_PI); GLfloat cz2 = cos(deg_rad(g->ca.cxz)-M_PI);
-  g->pl.x += -a.z*0.01*cx-a.x*0.01*cz2;
-  g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz-a.x*0.01*cx2;
+  GLfloat cx = sin(deg_rad(g->ca.cxz)); GLfloat cz = -cos(deg_rad(g->ca.cxz));
+  g->pl.x += -a.z*0.01*cx-a.x*0.01*cz;
+  g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx;
   g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
