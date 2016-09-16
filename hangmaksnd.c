@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "sounds.h"
+#include "gl_util.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -139,7 +140,7 @@ void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
-GLfloat deg_rad(GLfloat a) { return a*M_PI/180; }
+//GLfloat deg_rad(GLfloat a) { return a*M_PI/180; }
 Player cross(Player a, Player b) {
   return (Player) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
@@ -173,7 +174,6 @@ KState getInput(GLFWwindow *win) { KState n;
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
-  // to be simplified.
   GLfloat cx = sin(deg_rad(g->ca.cxz)); GLfloat cz = -cos(deg_rad(g->ca.cxz));
   g->pl.x += -a.z*0.01*cx-a.x*0.01*cz;
   g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx;
