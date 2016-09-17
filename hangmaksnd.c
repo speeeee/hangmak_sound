@@ -151,9 +151,10 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glColor4f(1.0,0.0,0.0,1.0);
   //GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
   //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
+  cube(pt(0,0,0),0.1);
   glBegin(GL_QUADS);
-    glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
-    glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
+    //glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
+    //glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
 
     glColor4f(0.2989,0.5,0.411,1.0);
     glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
