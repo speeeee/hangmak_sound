@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 typedef struct { GLfloat x; GLfloat y; GLfloat z; } Pt;
+Pt pt(GLfloat, GLfloat, GLfloat);
 
 GLfloat deg_rad(GLfloat);
 
@@ -17,4 +18,4 @@ void quad(Pt, Pt, Pt, Pt);
 // NOTE: this cannot be placed between a glBegin..glEnd block.  It will generate its own
 //       block.
 void quadp(Pt, Pt, Pt, Pt, Pt, GLfloat); 
-  
+void cube(Pt, GLfloat);  
