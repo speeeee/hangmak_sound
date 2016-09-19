@@ -120,14 +120,20 @@ int play_s(Queue *q, float t) { int i;
   //if((*d)->sc.s.lp >= (*d)->sc.s.sz || (*d)->sc.s.rp >= (*d)->sc.s.sz) {
   //  *d = drop_q(*d); } }
 
+/* == Sound synthesis ======== */
+
+float saw(int t, float p) { return 2*((float)t/p-floor(1./2+(float)t/p)); }
+//  where p = SAMPLE_RATE/frequency
+
 // This callback will terminate when the supplied sample ends.
 int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 const PaStreamCallbackTimeInfo *tInfo, PaStreamCallbackFlags statFlags,
                 void *userData) {
   GState *g = (GState *)userData; float *out = (float *)outputBuffer;
   int t = g->t;
-  for(;t<g->t+64;t++) { if(/*g->lk.x||g->lk.y*/0) {
-    float n = sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE)); *out++ = n; *out++ = n; }
+  for(;t<g->t+64;t++) { if(g->lk.x||g->lk.y) {
+    float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
+              saw(t,44100.0/440); *out++ = n; *out++ = n; }
     else { *out++ = 0; *out++ = 0; } }
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
@@ -179,6 +185,9 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   g->pl.x += -a.z*0.01*cx-a.x*0.01*cz;
   g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx;
   g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
+
+// TODO: make first instrument.
+
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
                        it will just return the sample of the sine at the GState's time).
