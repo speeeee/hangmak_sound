@@ -122,9 +122,15 @@ int play_s(Queue *q, float t) { int i;
 
 /* == Sound synthesis ======== */
 
+float ftop(float freq) { return (float)SAMPLE_RATE/freq; }
+
 float saw(int t, float p) { return 2*((float)t/p-floor(1./2+(float)t/p)); }
 //  where p = SAMPLE_RATE/frequency
 
+float trum[44100];
+//float trumpet(int t, float p) {
+
+void init_instrs(void) { for(int t=0;t<44100;t++) { trum[t] = saw(t,ftop(440.0)); } }
 // This callback will terminate when the supplied sample ends.
 int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 const PaStreamCallbackTimeInfo *tInfo, PaStreamCallbackFlags statFlags,
@@ -133,7 +139,7 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
   int t = g->t;
   for(;t<g->t+64;t++) { if(g->lk.x||g->lk.y) {
     float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
-              saw(t,44100.0/440); *out++ = n; *out++ = n; }
+              saw(t,ftop(440.0)); *out++ = n; *out++ = n; }
     else { *out++ = 0; *out++ = 0; } }
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
@@ -194,7 +200,8 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      The function would usually have a (Predicate,SndState) array.  When sounds are to be added,
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
-int main(void) { PaStreamParameters oP; PaStream *stream;
+int main(void) { init_instrs();
+    PaStreamParameters oP; PaStream *stream;
     GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0 };
     GLFWwindow* window;
 
