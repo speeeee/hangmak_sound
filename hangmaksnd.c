@@ -26,6 +26,8 @@
 #define SILENT  0
 #define PLAYING 1
 
+#define TRUMPET0 0
+
 typedef int (*TFun)(int, ...);
 
 typedef struct { GLfloat x; GLfloat y; GLfloat z; } Player;
@@ -36,7 +38,9 @@ typedef struct { GLfloat x; GLfloat y; GLfloat z; GLfloat tht; GLfloat phi; } KS
 typedef struct { Snd a; int lp; int rp; } SndState;
 typedef struct { float time; Snd s; int stat; } Sched;
 typedef struct Queue { Sched sc; struct Queue *n; } Queue;
-typedef struct { Player pl; Camera ca; KState lk; int t; } GState;
+typedef struct { int t; int act; } Instr;
+typedef struct { Player pl; Camera ca; KState lk; int t;
+                 Instr *evs; int esz; } GState;
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -127,20 +131,35 @@ float ftop(float freq) { return (float)SAMPLE_RATE/freq; }
 float saw(int t, float p) { return 2*((float)t/p-floor(1./2+(float)t/p)); }
 //  where p = SAMPLE_RATE/frequency
 
-float trum[44100];
-//float trumpet(int t, float p) {
+int active(int i, GState g) { return g.evs[i].act; }
+void schedule(int i, GState *g) { g->evs[i].act = 1; }
 
-void init_instrs(void) { for(int t=0;t<44100;t++) { trum[t] = saw(t,ftop(440.0)); } }
+float TRUMPET_I[44100];
+// simple trumpet simulation; linear ADSR.
+float trumpet(GState *g, int att, int dec, float perc, float p) { float n = 0;
+    if(active(TRUMPET0,*g)) { float nm = saw(g->evs[TRUMPET0].t,p);
+      if(g->lk.x||g->lk.y) {
+        if(g->evs[TRUMPET0].t<att) { n = nm*(float)(g->evs[TRUMPET0].t)/att; }
+        else if(g->evs[TRUMPET0].t<att+dec) { n = nm*(1.-perc*(g->evs[TRUMPET0].t-att))/dec; }
+        else { n = nm*perc; } g->evs[TRUMPET0].t++; }
+      else { if(g->evs[TRUMPET0].t>44100) { g->evs[TRUMPET0].t=44100; }
+        if(g->evs[TRUMPET0].t>0) { n = nm*(float)(g->evs[TRUMPET0].t--)/44100; }
+        else { g->evs[TRUMPET0].act = 0; } } } return n; }
+
+void init_instrs(void) { for(int t=0;t<44100;t++) { TRUMPET_I[t] = saw(t,ftop(440.0)); } }
 // This callback will terminate when the supplied sample ends.
 int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
                 const PaStreamCallbackTimeInfo *tInfo, PaStreamCallbackFlags statFlags,
                 void *userData) {
   GState *g = (GState *)userData; float *out = (float *)outputBuffer;
   int t = g->t;
-  for(;t<g->t+64;t++) { if(g->lk.x||g->lk.y) {
-    float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
-              saw(t,ftop(440.0)); *out++ = n; *out++ = n; }
-    else { *out++ = 0; *out++ = 0; } }
+  for(;t<g->t+64;t++) { float n = 0;
+    if((g->lk.x||g->lk.y)&&!active(TRUMPET0,*g)) { schedule(TRUMPET0,g); }
+    //float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
+              //trumpet(t,ftop(440.0)); int tr = t%44100;
+              //if(tr<8820) { n *= tr/8820; } *out++ = n; *out++ = n; }
+    n = trumpet(g,882,882i,0.75,ftop(440.));
+    *out++ = n; *out++ = n; }
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
     //   up where this left off.
@@ -200,9 +219,10 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      The function would usually have a (Predicate,SndState) array.  When sounds are to be added,
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
-int main(void) { init_instrs();
+int main(void) { init_instrs(); Instr *a = malloc(sizeof(Instr)); a[0] = (Instr) { 0, 0 };
     PaStreamParameters oP; PaStream *stream;
-    GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0 };
+    GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
+                          a, 1 };
     GLFWwindow* window;
 
     Pa_Initialize();
