@@ -145,7 +145,7 @@ float trumpet(GState *g, int att, int dec, float perc, float p) { float n = 0;
     if(active(TRUMPET0,*g)) { float nm = saw(g->evs[TRUMPET0].t,p);
       if(g->lk.x||g->lk.y) {
         if(g->evs[TRUMPET0].t<att) { n = nm*(float)(g->evs[TRUMPET0].t)/att; }
-        else if(g->evs[TRUMPET0].t<att+dec) { n = nm*(1.-perc*(g->evs[TRUMPET0].t-att))/dec; }
+        else if(g->evs[TRUMPET0].t<att+dec) { n = nm*(dec-perc*(g->evs[TRUMPET0].t-att))/dec; }
         else { n = nm*perc; } g->evs[TRUMPET0].t++; }
       else { if(g->evs[TRUMPET0].t>44100) { g->evs[TRUMPET0].t=44100; }
         if(g->evs[TRUMPET0].t>0) { n = nm*(float)(g->evs[TRUMPET0].t--)/44100; }
@@ -163,7 +163,7 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
     //float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
               //trumpet(t,ftop(440.0)); int tr = t%44100;
               //if(tr<8820) { n *= tr/8820; } *out++ = n; *out++ = n; }
-    n = trumpet(g,882,882i,0.75,ftop(440.));
+    n = trumpet(g,882,882,0.75,ftop(440.));
     *out++ = n; *out++ = n; }
     // the stream can be cut prematurely outside, and the phase values will be left in their
     //   previous state, though will be reset when calling the endStream function, which picks
