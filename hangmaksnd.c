@@ -11,8 +11,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "sounds.h"
 #include "gl_util.h"
+#include "sound_util.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -30,18 +30,8 @@
 
 typedef int (*TFun)(int, ...);
 
-typedef struct { GLfloat x; GLfloat y; GLfloat z; } Player;
 Player vect3(GLfloat x, GLfloat y, GLfloat z) { return (Player) { x, y, z }; }
-typedef struct { GLfloat cxz; GLfloat cyz; } Camera;
-typedef struct { GLfloat x; GLfloat y; GLfloat z; GLfloat tht; GLfloat phi; } KState;
-
-typedef struct { Snd a; int lp; int rp; } SndState;
-typedef struct { float time; Snd s; int stat; } Sched;
-typedef struct Queue { Sched sc; struct Queue *n; } Queue;
-typedef struct { int t; int act; } Instr;
 Instr instr(int t, int act) { return (Instr) { t, act }; }
-typedef struct { Player pl; Camera ca; KState lk; int t;
-                 Instr *evs; int esz; } GState;
 void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
   if(*a) { *a = malloc(sz*sizeof(Instr)); } else { *a = realloc(*a,(esz+sz)*sizeof(Instr)); }
   for(int i=esz;i<esz+sz;i++) { *a[i] = va_arg(vl,Instr); }
@@ -77,9 +67,6 @@ static GLuint mk_shader_program(const char *vs_src, const char *fs_src) { GLuint
 // where (GLfloat *X), ((GLFloat * -> void) *F), ...
 // more of a priority queue.
 
-Queue *push_q(Sched sc, Queue *o) { Queue *n = malloc(sizeof(Queue));
-  n->sc = sc; n->n = NULL; if(!o) { return n; }
-  else { Queue *i = o; for(;i&&sc.time > i->sc.time;i = i->n); i->n = n; return o; } }
 Queue *drop_q(Queue *o) { if(!o) { printf("ERROR: queue is empty.\n"); }
   else { Queue *a = o->n; /*free(a->sc.s.samp);*/ free(a); return o->n; } }
 Queue *get_q(int a, Queue *q) { for(;a>0&&q;q=q->n,a--); return q; }
@@ -120,36 +107,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 int any_eq(int a, int *b, int fro, int to) { int i; for(int i=fro;i<to&&b[i]!=a;i++);
   return i>=to?-1:i; }
 
-int get_amt_playing(Queue *q) { int i; for(i=0;q&&q->sc.stat;i++,q=q->n); return i; }
-int play_s(Queue *q, float t) { int i;
-  for(i=0;q&&t>=q->sc.time&&!q->sc.stat;q=q->n,i++) { q->sc.stat = PLAYING; } return i; }
-
-//void out_q(float *out, Queue **d) { *out += (*d)->sc.s.samp[(*d)->sc.s.lp++];
-//  *(out+1) += (*d)->sc.s.samp[(*d)->sc.s.rp++]; }
-  //if((*d)->sc.s.lp >= (*d)->sc.s.sz || (*d)->sc.s.rp >= (*d)->sc.s.sz) {
-  //  *d = drop_q(*d); } }
-
 /* == Sound synthesis ======== */
-
-float ftop(float freq) { return (float)SAMPLE_RATE/freq; }
-
-float saw(int t, float p) { return 2*((float)t/p-floor(1./2+(float)t/p)); }
-//  where p = SAMPLE_RATE/frequency
-
-int active(int i, GState g) { return g.evs[i].act; }
-void schedule(int i, GState *g) { g->evs[i].act = 1; }
-
-float TRUMPET_I[44100];
-// simple trumpet simulation; linear ADSR.
-float trumpet(GState *g, int att, int dec, float perc, float p) { float n = 0;
-    if(active(TRUMPET0,*g)) { float nm = saw(g->evs[TRUMPET0].t,p);
-      if(g->lk.x||g->lk.y) {
-        if(g->evs[TRUMPET0].t<att) { n = nm*(float)(g->evs[TRUMPET0].t)/att; }
-        else if(g->evs[TRUMPET0].t<att+dec) { n = nm*(dec-perc*(g->evs[TRUMPET0].t-att))/dec; }
-        else { n = nm*perc; } g->evs[TRUMPET0].t++; }
-      else { if(g->evs[TRUMPET0].t>44100) { g->evs[TRUMPET0].t=44100; }
-        if(g->evs[TRUMPET0].t>0) { n = nm*(float)(g->evs[TRUMPET0].t--)/44100; }
-        else { g->evs[TRUMPET0].act = 0; } } } return n; }
 
 void init_instrs(void) { for(int t=0;t<44100;t++) { TRUMPET_I[t] = saw(t,ftop(440.0)); } }
 // This callback will terminate when the supplied sample ends.
@@ -171,14 +129,10 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
     //if(d->lp >= d->sz || d->rp >= d->sz) { d->lp = d->rp = 0; return paComplete; } }
   g->t = t; return paContinue; }
 
-void nstr(Snd snd, PaStreamParameters oP, PaStream *stream) {
-  Pa_OpenStream(&stream,NULL,&oP,SAMPLE_RATE,FPB,paClipOff,detCallback,&snd); }
 void psound_det(PaStream *stream) {
   if(Pa_IsStreamStopped(stream)) { Pa_StartStream(stream); } }
 
 //GLfloat deg_rad(GLfloat a) { return a*M_PI/180; }
-Player cross(Player a, Player b) {
-  return (Player) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glTranslatef(0,0,-1.5);
