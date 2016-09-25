@@ -39,8 +39,13 @@ typedef struct { Snd a; int lp; int rp; } SndState;
 typedef struct { float time; Snd s; int stat; } Sched;
 typedef struct Queue { Sched sc; struct Queue *n; } Queue;
 typedef struct { int t; int act; } Instr;
+Instr instr(int t, int act) { return (Instr) { t, act }; }
 typedef struct { Player pl; Camera ca; KState lk; int t;
                  Instr *evs; int esz; } GState;
+void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
+  if(*a) { *a = malloc(sz*sizeof(Instr)); } else { *a = realloc(*a,(esz+sz)*sizeof(Instr)); }
+  for(int i=esz;i<esz+sz;i++) { *a[i] = va_arg(vl,Instr); }
+  va_end(vl); }
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -211,18 +216,17 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx;
   g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
 
-// TODO: make first instrument.
-
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
      an output sample (for example, if the state function is to return a sine function, then
                        it will just return the sample of the sine at the GState's time).
      The function would usually have a (Predicate,SndState) array.  When sounds are to be added,
      the PortAudio stream stops and the new sound is added to the array with a given predicate.
      All predicates take a GState as their input. */
-int main(void) { init_instrs(); Instr *a = malloc(sizeof(Instr)); a[0] = (Instr) { 0, 0 };
+int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     PaStreamParameters oP; PaStream *stream;
     GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
-                          a, 1 };
+                          a, 0 };
+    g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
 
     Pa_Initialize();
