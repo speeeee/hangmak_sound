@@ -12,7 +12,15 @@
 
 // len: amount of combinators or (bits used)/2.
 typedef struct { uint8_t *sk; int len; } Combinator;
-typedef struct { uint8_t (*args)[6]; } Args;
+typedef struct { uint8_t *args[6]; } Args;
+Args args(uint8_t *x, int asz, uint8_t *b, int bsz, uint8_t *c, int csz) { Args a;
+  a.args[0] = malloc(asz*sizeof(uint8_t)); a.args[2] = malloc(bsz*sizeof(uint8_t));
+  a.args[4] = malloc(csz*sizeof(uint8_t)); memcpy(a.args[0],x,asz);
+  memcpy(a.args[2],b,bsz); memcpy(a.args[4],c,csz);
+
+  for(int i=1;i<7;i+=2) { a.args[i] = malloc(sizeof(uint32_t));
+    memcpy(a.args[i],i==1?&asz:i==3?&bsz:&csz,sizeof(uint32_t)); } return a; }
+void free_args(Args a) { for(int i=0;i<6;i++) { free(a.args[i]); } }
 typedef struct { uint8_t *x; int sz; } Item;
 Item item(uint8_t *x, int sz) { return (Item) { x, sz }; }
 typedef struct Stk { Item i; struct Stk *p; } Stk;
@@ -34,8 +42,7 @@ int argsz(int amt, uint8_t *expr, int len) { int i = 0;
 Args get_args(int amt, uint8_t *expr, int len) { int x = argsz(amt,expr,len);
   int y = argsz(amt,&expr[x],len-x); int z = 0;
   if(amt==3) { z = argsz(amt,&expr[y+x],len-x-y); }
-  // TODO: write into the array {x,xsz,y,ysz,z,zsz}.
-  Args a; return a; }
+  return args(expr,x,&expr[x],y,NULL,0); }
 
 Combinator ski_eval(uint8_t *, uint32_t, Stk **);
 
