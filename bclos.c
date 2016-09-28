@@ -13,6 +13,14 @@
 
 // len: amount of combinators or (bits used)/2.
 typedef struct { uint8_t *sk; int len; } Combinator;
+Combinator combinator(const unsigned char *a) { uint8_t *sk = malloc(strlen(a)*sizeof(uint8_t));
+  for(int i=0;i<strlen(a);i++) { sk[i] = a[i]=='K'?0:a[i]=='P'?128:a[i]=='S'?64
+                                        :a[i]>'w'||a[i]<='z'?a[i]-'w':192; }
+  return (Combinator) { sk, strlen(a) }; }
+void prn_combinator(Combinator a) { for(int i=0;i<a.len;i++) { switch(a.sk[i]) {
+  case 0: printf("K"); break; case 64: printf("S"); break;
+  case 128: printf("`K"); break; case 192: printf("`S"); break;
+  case 1: printf("x"); break; case 2: printf("y"); break; case 3: printf("z"); } } printf("\n"); }
 typedef struct { Combinator args[3]; } Args;
 Args args(uint8_t *x, int asz, uint8_t *b, int bsz, uint8_t *c, int csz) { Args a;
   a.args[0].sk = malloc(asz*sizeof(uint8_t)); a.args[1].sk = malloc(bsz*sizeof(uint8_t));
@@ -53,7 +61,7 @@ uint8_t *comcat(int csz, Combinator a, ...) { va_list vl; va_start(vl,a); int sz
     nb = realloc(nb,(sz += q.len)*sizeof(uint8_t)); memcpy(&n[a.len],q.sk,sz*sizeof(uint8_t));
     n+=q.len; } return n; }
 
-Combinator ski_eval(uint8_t *, uint32_t, Stk **);
+Combinator ski_eval(uint8_t *, uint32_t);
 
 uint8_t *ski(Combinator exp, Stk **stk) {
   // S = 01; K = 00; (S X Y Z) = 11; (K X Y) = 10; I = SK
@@ -63,22 +71,30 @@ uint8_t *ski(Combinator exp, Stk **stk) {
   for(int q=0;q<len/CIB+len%CIB>0;q++) { 
     for(int i=0;i<CIB-len%CIB*CIB/len;i++) {
       lst[i+q*CIB] = exp.sk[q] << (uint8_t)i & (uint8_t)192; } }
-  return ski_eval(lst,len,stk).sk; }
+  return ski_eval(lst,len).sk; }
 // TODO: make Combinator recursive.
-Combinator ski_eval_c(Combinator a, Stk **stk) { ski_eval(a.sk,a.len,stk); }
-Combinator ski_eval(uint8_t *expr, uint32_t len, Stk **stk) { switch(expr[0]) {
-  case 0: { if(len<3) { push(item(expr,len),stk); return (Combinator) { NULL, 0 }; }
+Combinator ski_eval_c(Combinator a) { ski_eval(a.sk,a.len); }
+/*Combinator ski_eval(uint8_t *expr, uint32_t len) { switch(expr[0]) {
+  case 0: { //if(len<3) { push(item(expr,len),stk); return (Combinator) { NULL, 0 }; }
     // WARNING: This will crash.
     Args a = get_args(2,&expr[1],len-1);
-    Combinator l = ski_eval_c(a.args[0],stk); return l; }
-  case 64: { if(len<4) { push(item(expr,len),stk); return (Combinator) { NULL, 0 }; }
+    Combinator l = ski_eval_c(a.args[0]); return l; }
+  case 64: { //if(len<4) { push(item(expr,len),stk); return (Combinator) { NULL, 0 }; }
     Args a = get_args(3,&expr[1],len-1);
-    Combinator x = ski_eval_c(a.args[0],stk);
-    Combinator y = ski_eval_c(a.args[1],stk); if(y.sk[0]<128) { y.sk[0] += 128; }
-    Combinator z = ski_eval_c(a.args[2],stk);
-    return (Combinator) { comcat(4,x,z,y,z), a.args[0].len+a.args[1].len+a.args[2].len }; } } }
+    Combinator x = ski_eval_c(a.args[0]);
+    Combinator y = ski_eval_c(a.args[1]); if(y.sk[0]<128) { y.sk[0] += 128; }
+    Combinator z = ski_eval_c(a.args[2]);
+    return (Combinator) { comcat(4,x,z,y,z), a.args[0].len+a.args[1].len+a.args[2].len };
+  default: return (Combinator) { expr, len }; } } }*/
+Combinator ski_eval(uint8_t *expr, uint32_t len) { switch(expr[0]) {
+  case 0: { Combinator b; b.sk = malloc(sizeof(uint8_t)); b.sk[0] = expr[1];
+            b.len = 1; return b; }
+  case 64: { Combinator b; b.sk = malloc(4*sizeof(uint8_t));
+             b.sk[0] = expr[1]; b.sk[1] = expr[3]; b.sk[2] = expr[2]+128; b.sk[3] = expr[3];
+             b.len = 4; return b; } } }
 
 // TODO: make conversion back to binary
 // TODO: push to stack everything including SKI expressions.
 
-int main(int argc, char **argv) { return 0; }
+int main(int argc, char **argv) { Combinator a = combinator("SKKx");
+  prn_combinator(a); Combinator b = ski_eval_c(a); prn_combinator(b); return 0; }
