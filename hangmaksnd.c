@@ -117,7 +117,7 @@ int detCallback(const void *in, void *outputBuffer, unsigned long fpb,
   GState *g = (GState *)userData; float *out = (float *)outputBuffer;
   int t = g->t;
   for(;t<g->t+64;t++) { float n = 0;
-    if((g->lk.x||g->lk.y)&&!active(TRUMPET0,*g)) { schedule(TRUMPET0,g); }
+    if((g->lk.x||g->lk.y)&&!active(TRUMPET0,*g)&&0) { schedule(TRUMPET0,g); }
     //float n = /*sin(440*2*M_PI*((double)t/(double)SAMPLE_RATE));*/
               //trumpet(t,ftop(440.0)); int tr = t%44100;
               //if(tr<8820) { n *= tr/8820; } *out++ = n; *out++ = n; }
@@ -141,7 +141,7 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glColor4f(1.0,0.0,0.0,1.0);
   //GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
   //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
-  cube(pt(0,0,0),0.1);
+  cube(pt(-0.05,0,-0.05),0.1);
   glBegin(GL_QUADS);
     //glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
     //glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
