@@ -30,12 +30,19 @@
 
 typedef int (*TFun)(int, ...);
 
-Player vect3(GLfloat x, GLfloat y, GLfloat z) { return (Player) { x, y, z }; }
+Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { 0, 0, 0 }; }
+// TODO: rename vect3 to pla3.
+Player vect3(GLfloat x, GLfloat y, GLfloat z) {
+  return (Player) { x, y, z, (Vec3) { 0, 0, 0 }, (Vec3) { 0, 0, 0 } }; }
+
+// == Instruments =================== //
 Instr instr(int t, int act) { return (Instr) { t, act }; }
 void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
   if(*a) { *a = malloc(sz*sizeof(Instr)); } else { *a = realloc(*a,(esz+sz)*sizeof(Instr)); }
   for(int i=esz;i<esz+sz;i++) { *a[i] = va_arg(vl,Instr); }
   va_end(vl); }
+
+// ================================== //
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -46,8 +53,10 @@ typedef int (*Pred)(GState);
   "vec4 nc = vec4(dist/col.x*5.0,dist/col.y*5.0,0.0,1.0);"
   "gl_Position = gl_ModelViewProjectionMatrix * v;"
   "gl_FrontColor = nc; }";*/
-const char *ver_v = "void main(void) { vec4 v = vec4(gl_Vertex); vec4 c = vec4(gl_Color);"
-  "gl_FrontColor = c; gl_Position = gl_ModelViewProjectionMatrix*v; }";
+// use glUniform3fv
+const char *ver_v =
+  "void main(void) { vec4 v = vec4(gl_Vertex);"
+  "gl_FrontColor = gl_Color; gl_Position = gl_ModelViewProjectionMatrix*v; }";
 const char *frag_v = "void main(void) { vec4 v = vec4(gl_Color);"
   "gl_FragColor = v; }";
 
@@ -140,13 +149,13 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
 
   glColor4f(1.0,0.0,0.0,1.0);
   //GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
-  //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.y);
+  //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.z);
   cube(pt(-0.05,0,-0.05),0.1);
   glBegin(GL_QUADS);
     //glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
     //glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
 
-    glColor4f(0.2989,0.5,0.411,1.0);
+    glColor3f(0.2989,0.5,0.411);
     glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
     glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
   glEnd(); }
@@ -164,10 +173,15 @@ KState getInput(GLFWwindow *win) { KState n;
 
 /*int *getKeys(int keys[KC], GLFWwindow *win) { int a[KC];
   for(int i=0;i<ksz;i++) { a[i] = glfwGetKey(win,keys[i]); } return a; }*/
+// TODO: make into a vect3 the position.
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   GLfloat cx = sin(deg_rad(g->ca.cxz)); GLfloat cz = -cos(deg_rad(g->ca.cxz));
-  g->pl.x += -a.z*0.01*cx-a.x*0.01*cz;
-  g->pl.y += a.y*0.01; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx;
+  // change acceleration and velocity
+  g->pl.acc = vec_add(g->pl.acc,v3(0,g->gravity,0)); g->pl.vel = vec_add(g->pl.acc,g->pl.vel); 
+  // change position
+  g->pl.x += -a.z*0.01*cx-a.x*0.01*cz+g->pl.vel.x;
+  g->pl.y += a.y*0.01+g->pl.vel.y; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx+g->pl.vel.z;
+  // change camera position
   g->ca.cxz += a.phi; g->ca.cyz += a.tht; g->lk = a; }
 
 /* Initialize PortAudio; pass to PortAudio the GState; use function that takes the state and returns
@@ -178,8 +192,8 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      All predicates take a GState as their input. */
 int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     PaStreamParameters oP; PaStream *stream;
-    GState g = (GState) { (Player) { 0, 0, 0 }, (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
-                          a, 0 };
+    GState g = (GState) { vect3(0,0,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
+                          a, 0, 0 };
     g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
 
