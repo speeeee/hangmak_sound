@@ -1,16 +1,22 @@
+#ifndef GL_UTIL_H
+#define GL_UTIL_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "glob_structs.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-typedef struct { GLfloat x; GLfloat y; GLfloat z; } Pt;
+//typedef struct { GLfloat x; GLfloat y; GLfloat z; } Pt;
+typedef Vec3 Pt;
 Pt pt(GLfloat, GLfloat, GLfloat);
 
 GLfloat deg_rad(GLfloat);
 
 void vert3(Pt);
+Pt vec_add(Pt, Pt);
 
 void quad(Pt, Pt, Pt, Pt);
 
@@ -21,3 +27,5 @@ void quadp(Pt, Pt, Pt, Pt, Pt, GLfloat);
 void cube(Pt, GLfloat);
 
 Pt cross(Pt, Pt);
+
+#endif
