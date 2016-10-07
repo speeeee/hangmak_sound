@@ -28,9 +28,11 @@
 
 #define TRUMPET0 0
 
+#define GRAVITY 0.0
+
 typedef int (*TFun)(int, ...);
 
-Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { 0, 0, 0 }; }
+Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
 // TODO: rename vect3 to pla3.
 Player vect3(GLfloat x, GLfloat y, GLfloat z) {
   return (Player) { x, y, z, (Vec3) { 0, 0, 0 }, (Vec3) { 0, 0, 0 } }; }
@@ -155,6 +157,7 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
     //glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
     //glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
 
+    // TODO: inspect possible issue with rendering.
     glColor3f(0.2989,0.5,0.411);
     glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
     glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
@@ -177,7 +180,7 @@ KState getInput(GLFWwindow *win) { KState n;
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   GLfloat cx = sin(deg_rad(g->ca.cxz)); GLfloat cz = -cos(deg_rad(g->ca.cxz));
   // change acceleration and velocity
-  g->pl.acc = vec_add(g->pl.acc,v3(0,g->gravity,0)); g->pl.vel = vec_add(g->pl.acc,g->pl.vel); 
+  g->pl.acc = v3(0.,g->gravity,0.); g->pl.vel = vec_add(g->pl.acc,g->pl.vel); 
   // change position
   g->pl.x += -a.z*0.01*cx-a.x*0.01*cz+g->pl.vel.x;
   g->pl.y += a.y*0.01+g->pl.vel.y; g->pl.z += -a.z*0.01*cz+a.x*0.01*cx+g->pl.vel.z;
@@ -193,7 +196,7 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
 int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     PaStreamParameters oP; PaStream *stream;
     GState g = (GState) { vect3(0,0,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
-                          a, 0, 0 };
+                          a, 0, GRAVITY };
     g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
 
