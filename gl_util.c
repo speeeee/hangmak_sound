@@ -9,7 +9,7 @@
 typedef Vec3 Pt;
 
 Pt pt(GLfloat x, GLfloat y, GLfloat z) { return (Pt) { x, y, z }; }
-Pt vec_add(Pt a, Pt b) { pt(a.x+b.x,a.y+b.y,a.z+b.z); }
+Pt vec_add(Pt a, Pt b) { return pt(a.x+b.x,a.y+b.y,a.z+b.z); }
 
 GLfloat deg_rad(GLfloat x) { return x/180.*M_PI; }
 
