@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include <glad/glad.h>
 
@@ -33,5 +34,11 @@ typedef struct { /* Vec3 */ Array pts; int surf_type; int effect_type; } Surface
 typedef struct { /* Surface */ Array sfs; int par; } Stage;
 struct GState { Player pl; Camera ca; KState lk; int t;
                 Instr *evs; int esz; GLfloat gravity; };
+
+Vec3 v3(GLfloat, GLfloat, GLfloat);
+// warning: allocation.
+Array Vec3_arr(int, ...);
+Array Plane_arr(int, ...);
+Array Surface_arr(int, ...);
 
 #endif
