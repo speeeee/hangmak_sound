@@ -42,6 +42,7 @@ Array Plane_arr(int, ...);
 Array Surface_arr(int, ...);
 
 Vec3 cross(Vec3, Vec3);
+//Vec3 norm(Vec3);
 
 GLfloat dot(Vec3, Vec3);
 GLfloat len(Vec3);

@@ -15,6 +15,7 @@
 
 #include "gl_util.h"
 #include "sound_util.h"
+#include "stage_util.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -46,6 +47,13 @@ void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
   va_end(vl); }
 
 // ================================== //
+
+
+// == global variables here are strictly for testing ========== //
+
+Plane p;
+
+// ============================================================ //
 
 typedef int (*Pred)(GState);
 //data dat; PaStream *stream;
@@ -160,8 +168,9 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
 
     // TODO: inspect possible issue with rendering.
     glColor3f(0.2989,0.5,0.411);
-    glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
-    glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
+    //glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
+    //glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
+    render_plane(p);
   glEnd(); }
 
 int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
@@ -200,6 +209,13 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
                           a, 0, GRAVITY };
     g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
+
+    // == allocation of TEST globals ========== //
+
+    p.type = 0; p.pts = Vec3_arr(4,v3(-1,1,-1),v3(1,1,-1),v3(1,-1,1),v3(-1,-1,1));
+    p.normal = v3(0,0.5,-0.5); // TODO: normalize
+
+    // ======================================== //
 
     Pa_Initialize();
     glfwSetErrorCallback(error_callback);
