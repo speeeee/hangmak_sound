@@ -11,6 +11,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "glob_structs.h"
+
 #include "gl_util.h"
 #include "sound_util.h"
 
@@ -32,7 +34,6 @@
 
 typedef int (*TFun)(int, ...);
 
-Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
 // TODO: rename vect3 to pla3.
 Player vect3(GLfloat x, GLfloat y, GLfloat z) {
   return (Player) { x, y, z, (Vec3) { 0, 0, 0 }, (Vec3) { 0, 0, 0 } }; }
