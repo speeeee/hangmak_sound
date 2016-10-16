@@ -7,8 +7,11 @@
 
 // -- see header ------------- //
 
+#define D (GLdouble)
+
 typedef struct GState GState;
 typedef struct Vec3 Vec3;
+typedef struct Matrix Matrix;
 
 typedef void (*StateChange)(GState *);
 typedef void (*CollEffect)(GState *, Vec3 /* normal */);
@@ -22,7 +25,13 @@ typedef struct { int t; int act; } Instr;
 typedef struct { void *a; int sz; } Array; // by context is the type known.
                                             // the type will be written before upon initialization.
 
+GLfloat deg_rad(GLfloat x) { return x/180.*M_PI; }
+GLfloat cos_rad(GLfloat x) { return cos(deg_rad(x)); }
+GLfloat sin_rad(GLfloat x) { return sin(deg_rad(x)); }
+
 struct Vec3 { GLfloat x; GLfloat y; GLfloat z; };
+struct Matrix { /* GLfloat */ Array pts; int x; int y; };
+Matrix matrix(Array a, int x, int y) { return (Matrix) { a, x, y }; }
 typedef struct { GLfloat x; GLfloat y; GLfloat z; Vec3 vel; Vec3 acc; } Player;
 //typedef struct { Vec3 pos; Vec3 normal; } Plane;
 typedef struct { /* Vec3 */ Array pts; int type; Vec3 normal; } Plane;
@@ -44,11 +53,33 @@ Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
 ARRAY_FOR_TYPE(Vec3)
 ARRAY_FOR_TYPE(Plane)
 ARRAY_FOR_TYPE(Surface)
+ARRAY_FOR_TYPE(GLdouble)
 
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
+Vec3 inv(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
+GLfloat vec_len(Vec3 a) { pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
+
+Vec3 norm(Vec3 a) { GLfloat len = vec_len(a);
+  return v3(a.x/len,a.y/len,a.z/len); }
+
+// assume correctly sized for multiplication.
+Vec3 transform3(Matrix a, Vec3 b) { GLfloat *arr = (GLfloat *)a.pts.a;
+  return v3(arr[0]*b.x+arr[1]*b.y+arr[2]*b.z, arr[3]*b.x+arr[4]*b.y+arr[5]*b.z
+           ,arr[6]*b.x+arr[7]*b.y+arr[8]*b.z); }
+Vec3 rotate_vec(GLfloat tht, Vec3 subj, Vec3 axis) {
+  GLfloat ty = sin_rad(tht); GLfloat tx = cos_rad(tht);
+  // TODO: free this.
+  Matrix rotation_matrix = matrix(GLdouble_arr(
+    D axis.x*axis.x*(1-tx)+tx, D axis.y*axis.x*(1-tx)-axis.z*ty, D axis.z*axis.x*(1-tx)+axis.y*ty
+   ,D axis.x*axis.y*(1-tx)+axis.z*ty, D axis.y*axis.y*(1-tx)+tx, D axis.z*axis.y*(1-tx)-axis.x*ty
+   ,D axis.x*axis.z*(1-tx)-axis.y*ty, D axis.y*axis.z*(1-tx)+axis.x*ty, D axis.z*axis.z*(1-tx)+tx )
+  ,3,3);
+  return transform3(rotation_matrix,subj); }
+
 GLfloat dot(Vec3 a, Vec3 b) { a.x*b.x+a.y*b.y+a.z*b.z; }
-GLfloat len(Vec3 a) { pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
+
+GLfloat angle(Vec3 a, Vec3 b) { return dot(a,b)/vec_len(a)*vec_len(b); }
 
 void vert3(Vec3 a) { glVertex3f(a.x,a.y,a.z); }
