@@ -13,8 +13,6 @@
 typedef Vec3 Pt;
 Pt pt(GLfloat, GLfloat, GLfloat);
 
-GLfloat deg_rad(GLfloat);
-
 void vert3(Pt);
 Pt vec_add(Pt, Pt);
 
