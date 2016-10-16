@@ -212,8 +212,8 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
 
     // == allocation of TEST globals ========== //
 
-    p.type = 0; p.pts = Vec3_arr(4,v3(-1,1,-1),v3(1,1,-1),v3(1,-1,1),v3(-1,-1,1));
-    p.normal = v3(0,0.5,-0.5); // TODO: normalize
+    p.type = RIGID_COLLISION; p.pts = Vec3_arr(4,v3(-1,0,-1),v3(1,0,-1),v3(1,0,1),v3(-1,0,1));
+    p.normal = v3(0,1,0); // TODO: normalize
 
     // ======================================== //
 
