@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include <glad/glad.h>
 
@@ -43,3 +44,11 @@ Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
 ARRAY_FOR_TYPE(Vec3)
 ARRAY_FOR_TYPE(Plane)
 ARRAY_FOR_TYPE(Surface)
+
+Vec3 cross(Vec3 a, Vec3 b) {
+  return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
+
+GLfloat dot(Vec3 a, Vec3 b) { a.x*b.x+a.y*b.y+a.z*b.z; }
+GLfloat len(Vec3 a) { pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
+
+void vert3(Vec3 a) { glVertex3f(a.x,a.y,a.z); }
