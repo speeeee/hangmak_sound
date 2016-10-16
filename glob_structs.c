@@ -39,7 +39,7 @@ struct GState { Player pl; Camera ca; KState lk; int t;
 
 Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
 #define ARRAY_FOR_TYPE(TYPE) Array TYPE ## _arr(int sz, ...) { Array n; n.sz = sz; \
-  TYPE *a = malloc(n.sz*sizeof(TYPE *)); va_list vl; va_start(vl,sz); \
+  TYPE *a = malloc(n.sz*sizeof(TYPE)); va_list vl; va_start(vl,sz); \
   for(int i=0;i<sz;i++) { a[i] = va_arg(vl,TYPE); } n.a = (void *)a; va_end(vl); return n; }
 ARRAY_FOR_TYPE(Vec3)
 ARRAY_FOR_TYPE(Plane)
