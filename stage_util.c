@@ -15,4 +15,6 @@ Plane plane(Array pts, int t, Vec3 normal) { return (Plane) { pts, t, normal }; 
   glPopMatrix(); }*/
 void render_plane(Plane p) { glBegin(GL_POLYGON);
   for(int i=0;i<p.pts.sz;i++) { vert3(((Vec3 *)p.pts.a)[i]); } glEnd(); }
-//TODO: surface and plane rendering functions. 
+//TODO: surface and plane rendering functions.
+
+  

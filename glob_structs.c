@@ -11,6 +11,7 @@
 
 typedef struct GState GState;
 typedef struct Vec3 Vec3;
+typedef struct Vec2 Vec2;
 typedef struct Matrix Matrix;
 
 typedef void (*StateChange)(GState *);
@@ -30,6 +31,7 @@ GLfloat cos_rad(GLfloat x) { return cos(deg_rad(x)); }
 GLfloat sin_rad(GLfloat x) { return sin(deg_rad(x)); }
 
 struct Vec3 { GLfloat x; GLfloat y; GLfloat z; };
+struct Vec2 { GLfloat x; GLfloat y; };
 struct Matrix { /* GLfloat */ Array pts; int x; int y; };
 Matrix matrix(Array a, int x, int y) { return (Matrix) { a, x, y }; }
 typedef struct { GLfloat x; GLfloat y; GLfloat z; Vec3 vel; Vec3 acc; } Player;
@@ -47,6 +49,7 @@ struct GState { Player pl; Camera ca; KState lk; int t;
 // ---------------------------- //
 
 Vec3 v3(GLfloat x, GLfloat y, GLfloat z) { return (Vec3) { x, y, z }; }
+Vec2 v2(GLfloat x, GLfloat y) { return (Vec2) { x, y }; }
 #define ARRAY_FOR_TYPE(TYPE) Array TYPE ## _arr(int sz, ...) { Array n; n.sz = sz; \
   TYPE *a = malloc(n.sz*sizeof(TYPE)); va_list vl; va_start(vl,sz); \
   for(int i=0;i<sz;i++) { a[i] = va_arg(vl,TYPE); } n.a = (void *)a; va_end(vl); return n; }
@@ -54,6 +57,7 @@ ARRAY_FOR_TYPE(Vec3)
 ARRAY_FOR_TYPE(Plane)
 ARRAY_FOR_TYPE(Surface)
 ARRAY_FOR_TYPE(GLdouble)
+ARRAY_FOR_TYPE(Vec2)
 
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }

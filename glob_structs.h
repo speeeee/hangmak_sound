@@ -12,6 +12,7 @@
 
 typedef struct GState GState;
 typedef struct Vec3 Vec3;
+typedef struct Vec2 Vec2;
 typedef struct Matrix Matrix;
 
 typedef void (*StateChange)(GState *);
@@ -32,6 +33,7 @@ GLfloat cos_rad(GLfloat);
 GLfloat sin_rad(GLfloat);
 
 struct Vec3 { GLfloat x; GLfloat y; GLfloat z; };
+struct Vec2 { GLfloat x; GLfloat y; };
 struct Matrix { /* GLfloat */ Array pts; int x; int y; };
 Matrix matrix(Array, int, int);
 typedef struct { GLfloat x; GLfloat y; GLfloat z; Vec3 vel; Vec3 acc; } Player;
@@ -48,10 +50,13 @@ struct GState { Player pl; Camera ca; KState lk; int t;
                 Instr *evs; int esz; GLfloat gravity; };
 
 Vec3 v3(GLfloat, GLfloat, GLfloat);
+Vec2 v2(GLfloat, GLfloat);
 // warning: allocation.
 Array Vec3_arr(int, ...);
 Array Plane_arr(int, ...);
 Array Surface_arr(int, ...);
+Array GLdouble_arr(int, ...);
+Array Vec2_arr(int, ...);
 
 Vec3 cross(Vec3, Vec3);
 //Vec3 norm(Vec3);
