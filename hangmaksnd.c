@@ -17,6 +17,7 @@
 #include "sound_util.h"
 #include "stage_util.h"
 #include "func_util.h"
+#include "physics.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -32,7 +33,10 @@
 
 #define TRUMPET0 0
 
-#define GRAVITY 0.0
+#define GRAVITY (-0.0001)
+
+#define P_VEC v3(g.pl.x,g.pl.y,g.pl.z)
+#define P_VEC_PT v3(g->pl.x,g->pl.y,g->pl.z)
 
 typedef int (*TFun)(int, ...);
 
@@ -56,7 +60,10 @@ PLANE(45_tilt,v3(pow(2.,0.5),pow(2.,0.5),0))
 FUNCTION_JUST_X(sine,sin)
 
 GLfloat mul_5(GLfloat x) { return 5*x; }
-GEN_FUNCTION(sin2,COMPOSE(sin,COMPOSE_X(mul_5)))
+GEN_FUNCTION(sin5,COMPOSE(sin,COMPOSE_X(mul_5)))
+
+// assume that y does not change with z.
+GLfloat deriv_sin5_x(GLfloat x, GLfloat z) { return 5*cos(5*x); }
 
 GLfloat x_squared(GLfloat x, GLfloat z) { return pow(x,2.); }
 Surface s;
@@ -169,7 +176,8 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
   glColor4f(1.0,0.0,0.0,1.0);
   //GLfloat pos = glGetUniformLocation(prog,"x"); glUniform1f(pos,g.pl.x);
   //GLfloat posy = glGetUniformLocation(prog,"y"); glUniform1f(posy,g.pl.z);
-  cube(pt(-0.05,0,-0.05),0.1);
+  //cube(pt(-0.05,0,-0.05),0.1);
+  cube(pt(g.pl.x-0.05,g.pl.y,g.pl.z-0.05),0.1);
   glBegin(GL_QUADS);
     //glVertex3f(-0.05,0,0.05); glVertex3f(0.05,0,0.05);
     //glVertex3f(0.05,0.1,0.05); glVertex3f(-0.05,0.1,0.05);
@@ -213,7 +221,7 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      All predicates take a GState as their input. */
 int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     PaStreamParameters oP; PaStream *stream;
-    GState g = (GState) { vect3(0,0,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
+    GState g = (GState) { vect3(0,0.5,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
                           a, 0, GRAVITY };
     g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
@@ -224,7 +232,7 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     //p.normal = norm(v3(0,1,0)); // DONE: normalize
 
     s.bl = v3(-1,0,-1); s.tr = v3(1,0,1); s.effect_type = RIGID_COLLISION;
-    s.fun = func_sin2; 
+    s.fun = func_sin5;
 
     // ======================================== //
 
@@ -258,7 +266,12 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     psound_det(stream);
     while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g); 
-      procInput(&g,window); glfwSwapBuffers(window);
+      procInput(&g,window);
+      //if(test_collision_below(P_VEC,s)) { rigid_collision(&g,v3(
+      //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
+      if(test_collision_below(P_VEC,s)) { GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
+        rigid_collision_simp(&g,v3(cos(atan(n)),sin(atan(n)),0)); }
+      glfwSwapBuffers(window);
       glfwPollEvents(); }
     error:
     Pa_StopStream(stream); Pa_CloseStream(stream); Pa_Terminate();

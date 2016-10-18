@@ -1,11 +1,14 @@
 #include <stdlib.h>
+#include <math.h>
 #include "glob_structs.h"
 
 #include <glad/glad.h>
 
 #define FLOAT_MIN (-65535)
 #define EPSILON (0.01)
-#define INFINITY (1./0)
+//#define INFINITY (1./0)
+
+// all is done using the y-axis.
 
 void rigid_collision(GState *g, Vec3 normal) { Vec3 ivel = inv(g->pl.vel);
   GLfloat tht = angle(ivel,normal);
@@ -13,6 +16,10 @@ void rigid_collision(GState *g, Vec3 normal) { Vec3 ivel = inv(g->pl.vel);
   // DONE: reflect velocity of ball wrt normal.  rotate wrt plane normal.
   // DONE: reflect position of ball wrt normal.  rotate wrt plane normal.
   g->pl.vel = rotate_vec(tht,ivel,norm(pla)); }
+// intentionally incorrect for testing.
+void rigid_collision_simp(GState *g, Vec3 normal) {
+  GLfloat l = vec_len(g->pl.vel); Vec3 nn = norm(normal);
+  g->pl.vel = v3(l*nn.x,l*nn.y,l*nn.z); }
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array a, Vec3 axis) {
@@ -38,14 +45,21 @@ int ray_intersects(Vec2 v, Vec3 pa, Vec3 pb) {
 
 // TODO: also project onto YZ- and XY-axis as other tests.  it passes if any of these passes.
 // project test test vector and plane onto XZ-axis
-int within_bounds(Vec3 a, Plane p) { // if the point is within the space that extends outward from
+/*int within_bounds(Vec3 a, Plane p) { // if the point is within the space that extends outward from
                                      // the plane, then it is within the bounds of it.
   Vec3 *vs = project_wrt_normal(p.pts,v3(1,0,1)); int res = 0;
   for(int i=0;i<p.pts.sz;i++) { res += ray_intersects(v2(FLOAT_MIN,a.z),vs[i],vs[(i+1)%p.pts.sz]); }
-  return res%2; }
+  return res%2; }*/
 //int test_collision(GState *g, Vec3 hyp, Plane p) { // hyp is the hypothetical position after
 //                                                   // calculations with surfaces and without
 //                                                   // planes.
 // assumes infinite size plane
 // pt can be any point from the Plane.
-//int test_plane_collision(GState g, Vec3 hyp, Vec3 normal, Vec3 pt, Vec3 ptb) {
+// done wrt y-axis
+//int test_plane_collision(GState g, Vec3 hyp, Vec3 normal, Vec3 pt) {
+//  GLfloat tht = angle(normal,v3(0,1,0)); GLfloat slope = tan(tht); // check
+
+int within_bounds(Vec3 a, Surface s) { return a.x>=s.bl.x&&a.x<=s.tr.x
+                                            &&a.z>=s.bl.z&&a.z<=s.tr.z; }
+int test_collision_below(Vec3 a, Surface s) {
+  return within_bounds(a,s)&&a.y<s.fun(a.x,a.z); }
