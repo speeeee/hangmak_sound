@@ -16,6 +16,7 @@ typedef struct Matrix Matrix;
 
 typedef void (*StateChange)(GState *);
 typedef void (*CollEffect)(GState *, Vec3 /* normal */);
+typedef GLfloat (*FuncXZ)(GLfloat x, GLfloat z);
 
 typedef struct { GLfloat cxz; GLfloat cyz; } Camera;
 typedef struct { GLfloat x; GLfloat y; GLfloat z; GLfloat tht; GLfloat phi; } KState;
@@ -37,10 +38,14 @@ Matrix matrix(Array a, int x, int y) { return (Matrix) { a, x, y }; }
 typedef struct { GLfloat x; GLfloat y; GLfloat z; Vec3 vel; Vec3 acc; } Player;
 //typedef struct { Vec3 pos; Vec3 normal; } Plane;
 typedef struct { /* Vec3 */ Array pts; int type; Vec3 normal; } Plane;
+// TriPlane.pf is expected to be a plane.
+typedef struct { Vec3 a; Vec3 b; Vec3 c; int effect_type; Vec3 normal; } TriPlane;
+typedef struct { Vec3 bl; Vec3 tr; FuncXZ fun; int effect_type; } Surface;
+// let `bl' be the origin (0,0) wrt fun.
 // see 'stage_util.h' for macros corresponding to surface type.
 // assumes only X and Z planes are used.
 // TODO: make array that maps Plane type to CollEffect and an array Surface type to StateChange.
-typedef struct { /* Vec3 */ Array pts; int surf_type; int effect_type; } Surface;
+//typedef struct { /* Vec3 */ Array pts; int surf_type; int effect_type; } Surface;
 // see 'stage_util.h' for macros corresponding to effect_type and surf_type.
 typedef struct { /* Surface */ Array sfs; int par; } Stage;
 struct GState { Player pl; Camera ca; KState lk; int t;
