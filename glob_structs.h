@@ -29,7 +29,6 @@ typedef struct { void *a; int sz; } Array; // by context is the type known.
                                            // the type will be written before upon initialization.
 
 GLfloat deg_rad(GLfloat);
-GLfloat deg_rad(GLfloat);
 GLfloat cos_rad(GLfloat);
 GLfloat sin_rad(GLfloat);
 
