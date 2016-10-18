@@ -16,6 +16,7 @@
 #include "gl_util.h"
 #include "sound_util.h"
 #include "stage_util.h"
+#include "func_util.h"
 
 #define SAMPLE_RATE (44100)
 #define FPB (64)
@@ -51,7 +52,8 @@ void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
 
 // == global variables here are strictly for testing ========== //
 
-Plane p;
+PLANE(45_tilt,v3(pow(2.,0.5),pow(2.,0.5),0))
+Surface s;
 
 // ============================================================ //
 
@@ -170,7 +172,7 @@ void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
     glColor3f(0.2989,0.5,0.411);
     //glVertex3f(-3-g.pl.x,-g.pl.y,-3+g.pl.z); glVertex3f(3-g.pl.x,-g.pl.y,-3+g.pl.z);
     //glVertex3f(3-g.pl.x,-g.pl.y,3+g.pl.z); glVertex3f(-3-g.pl.x,-g.pl.y,3+g.pl.z);
-    render_plane(p);
+    render_surface(s,0.1);
   glEnd(); }
 
 int pressed(GLFWwindow *win, int k) { return glfwGetKey(win,k)==GLFW_PRESS; }
@@ -212,8 +214,11 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
 
     // == allocation of TEST globals ========== //
 
-    p.type = RIGID_COLLISION; p.pts = Vec3_arr(4,v3(-1,0,-1),v3(1,0,-1),v3(1,0,1),v3(-1,0,1));
-    p.normal = v3(0,1,0); // TODO: normalize
+    //p.type = RIGID_COLLISION; p.pts = Vec3_arr(4,v3(-1,0,-1),v3(1,0,-1),v3(1,0,1),v3(-1,0,1));
+    //p.normal = norm(v3(0,1,0)); // DONE: normalize
+
+    s.bl = v3(-1,0,-1); s.tr = v3(1,0,1); s.effect_type = RIGID_COLLISION;
+    s.fun = plane_45_tilt; 
 
     // ======================================== //
 
