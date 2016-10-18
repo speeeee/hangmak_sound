@@ -15,6 +15,18 @@ Plane plane(Array pts, int t, Vec3 normal) { return (Plane) { pts, t, normal }; 
   glPopMatrix(); }*/
 void render_plane(Plane p) { glBegin(GL_POLYGON);
   for(int i=0;i<p.pts.sz;i++) { vert3(((Vec3 *)p.pts.a)[i]); } glEnd(); }
-//TODO: surface and plane rendering functions.
-
-  
+//DONE: surface and plane rendering functions.
+// TODO: make this function nicer.
+void render_surface(Surface s, GLfloat step) { // step is the interval between y-tests.
+  glBegin(GL_QUADS);
+  //vert3(v3(s.br.x,s.fun(s.br.x,s.br.z)-s.br.y,s.br.z));
+  //vert3(v3(s.br.x+step,s.fun(s.br.x+step,s.br.z)-s.br.y,s.br.z));
+  //vert3(v3(s.br.x+step,s.fun(s.br.x+step,s.br.z+step)-s.br.y,s.br.z+step));
+  //vert3(v3(s.br.x,s.fun(s.br.x,s.br.z+step)-s.br.y,s.br.z+step));
+  for(int q=0;q<(int)((s.tr.z-s.bl.z)/step);q++) {
+    for(int i=0;i<(int)((s.tr.x-s.bl.x)/step);i++) {
+      vert3(v3(s.bl.x+step*i,s.fun(s.bl.x+step*i,s.bl.z+step*q),s.bl.z+step*q));
+      vert3(v3(s.bl.x+step*(i+1),s.fun(s.bl.x+step*(i+1),s.bl.z+step*q),s.bl.z+step*q));
+      vert3(v3(s.bl.x+step*(i+1),s.fun(s.bl.x+step*(i+1),s.bl.z+step*(q+1)),s.bl.z+step*(q+1)));
+      vert3(v3(s.bl.x+step*i,s.fun(s.bl.x+step*i,s.bl.z+step*(q+1)),s.bl.z+step*(q+1))); } }
+  glEnd(); }

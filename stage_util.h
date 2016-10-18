@@ -6,3 +6,4 @@
 Plane plane(Array, int, Vec3);
 // renders 2D surface at normal p.normal.
 void render_plane(Plane);
+void render_surface(Surface, GLfloat);
