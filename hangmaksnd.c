@@ -53,6 +53,12 @@ void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
 // == global variables here are strictly for testing ========== //
 
 PLANE(45_tilt,v3(pow(2.,0.5),pow(2.,0.5),0))
+FUNCTION_JUST_X(sine,sin)
+
+GLfloat mul_5(GLfloat x) { return 5*x; }
+GEN_FUNCTION(sin2,COMPOSE(sin,COMPOSE_X(mul_5)))
+
+GLfloat x_squared(GLfloat x, GLfloat z) { return pow(x,2.); }
 Surface s;
 
 // ============================================================ //
@@ -218,7 +224,7 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     //p.normal = norm(v3(0,1,0)); // DONE: normalize
 
     s.bl = v3(-1,0,-1); s.tr = v3(1,0,1); s.effect_type = RIGID_COLLISION;
-    s.fun = plane_45_tilt; 
+    s.fun = func_sin2; 
 
     // ======================================== //
 
