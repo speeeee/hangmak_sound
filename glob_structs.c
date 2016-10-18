@@ -80,11 +80,12 @@ Vec3 transform3(Matrix a, Vec3 b) { GLfloat *arr = (GLfloat *)a.pts.a;
 Vec3 rotate_vec(GLfloat tht, Vec3 subj, Vec3 axis) {
   GLfloat ty = sin_rad(tht); GLfloat tx = cos_rad(tht);
   // TODO: free this.
-  Matrix rotation_matrix = matrix(GLdouble_arr(
-    D axis.x*axis.x*(1-tx)+tx, D axis.y*axis.x*(1-tx)-axis.z*ty, D axis.z*axis.x*(1-tx)+axis.y*ty
+  Matrix rotation_matrix = matrix(GLdouble_arr(9
+   ,D axis.x*axis.x*(1-tx)+tx, D axis.y*axis.x*(1-tx)-axis.z*ty, D axis.z*axis.x*(1-tx)+axis.y*ty
    ,D axis.x*axis.y*(1-tx)+axis.z*ty, D axis.y*axis.y*(1-tx)+tx, D axis.z*axis.y*(1-tx)-axis.x*ty
    ,D axis.x*axis.z*(1-tx)-axis.y*ty, D axis.y*axis.z*(1-tx)+axis.x*ty, D axis.z*axis.z*(1-tx)+tx )
   ,3,3);
+  free(rotation_matrix.pts.a);
   return transform3(rotation_matrix,subj); }
 
 GLfloat dot(Vec3 a, Vec3 b) { a.x*b.x+a.y*b.y+a.z*b.z; }
