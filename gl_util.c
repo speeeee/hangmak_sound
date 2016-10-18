@@ -21,7 +21,8 @@ void quadp(Pt a, Pt b, Pt c, Pt d, Pt axis, GLfloat tht) { glPushMatrix();
   glRotatef(tht,axis.x,axis.y,axis.z); glNormal3f(0,0,-1); glBegin(GL_QUADS); quad(a,b,c,d); glEnd();
   glPopMatrix(); } 
 
-void cube(Pt a, GLfloat l) { glPushMatrix(); glTranslatef(-a.x-l/2,-a.y,-a.z-l/2);
+// translation vector changed.
+void cube(Pt a, GLfloat l) { glPushMatrix(); glTranslatef(a.x+l/2,a.y,a.z+l/2);
   for(int i=0;i<4;i++) { quadp(pt(-l/2,0,-l/2),pt(l/2,0,-l/2),pt(l/2,l,-l/2),pt(-l/2,l,-l/2)
                               ,pt(0,1,0),-90.*i); } glBegin(GL_QUADS);
   quad(pt(-l/2,0,-l/2),pt(l/2,0,-l/2),pt(l/2,0,l/2),pt(-l/2,0,l/2));
