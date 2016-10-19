@@ -8,7 +8,13 @@
 #define EPSILON (0.01)
 //#define INFINITY (1./0)
 
-// all is done using the y-axis.
+Vec3 next_position(GState g) {
+  // change acceleration and velocity
+  Vec3 na = v3(0.,g.gravity,0.); Vec3 nv = vec_add(na,g.pl.vel); 
+  // change position
+  return v3(g.pl.x+g.pl.vel.x, g.pl.y+g.pl.vel.y, g.pl.z+g.pl.vel.z); }
+
+// all is done using wrt the y-axis.
 
 void rigid_collision(GState *g, Vec3 normal) { Vec3 ivel = inv(g->pl.vel);
   GLfloat tht = angle(ivel,normal);
@@ -61,5 +67,7 @@ int ray_intersects(Vec2 v, Vec3 pa, Vec3 pb) {
 
 int within_bounds(Vec3 a, Surface s) { return a.x>=s.bl.x&&a.x<=s.tr.x
                                             &&a.z>=s.bl.z&&a.z<=s.tr.z; }
-int test_collision_below(Vec3 a, Surface s) {
-  return within_bounds(a,s)&&a.y<s.fun(a.x,a.z); }
+int test_collision_below(Vec3 a, Vec3 a_next, Surface s) {
+  return within_bounds(a_next,s)
+       &&((a.y<s.fun(a.x,a.z)&&a_next.y>s.fun(a.x,a.z))
+        ||(a.y>s.fun(a.x,a.z)&&a_next.y<s.fun(a.x,a.z))); }

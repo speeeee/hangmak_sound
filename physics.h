@@ -8,6 +8,8 @@
 #define EPSILON (0.01)
 //#define INFINITY (1./0)
 
+Vec3 next_position(GState);
+
 // all is done using the y-axis.
 
 void rigid_collision(GState *, Vec3);
@@ -40,5 +42,5 @@ int ray_intersects(Vec2, Vec3, Vec3);
 //  GLfloat tht = angle(normal,v3(0,1,0)); GLfloat slope = tan(tht); // check
 
 int within_bounds(Vec3, Surface);
-int test_collision_below(Vec3, Surface);
+int test_collision_below(Vec3, Vec3, Surface);
 
