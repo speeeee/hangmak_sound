@@ -269,8 +269,9 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
       procInput(&g,window);
       //if(test_collision_below(P_VEC,s)) { rigid_collision(&g,v3(
       //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
-      if(test_collision_below(P_VEC,s)) { GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
-        rigid_collision_simp(&g,v3(cos(atan(n)),sin(atan(n)),0)); }
+      if(test_collision_below(P_VEC,next_position(g),s)) { //GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
+        //rigid_collision_simp(&g,v3(cos(atan(n)),sin(atan(n)),0)); }
+        g.pl.vel = v3(0,0,0); }
       glfwSwapBuffers(window);
       glfwPollEvents(); }
     error:
