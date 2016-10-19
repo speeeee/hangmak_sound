@@ -9,7 +9,6 @@
 typedef Vec3 Pt;
 
 Pt pt(GLfloat x, GLfloat y, GLfloat z) { return (Pt) { x, y, z }; }
-Pt vec_add(Pt a, Pt b) { return pt(a.x+b.x,a.y+b.y,a.z+b.z); }
 
 void quad(Pt a, Pt b, Pt c, Pt d) {
   vert3(a); vert3(b); vert3(c); vert3(d); }

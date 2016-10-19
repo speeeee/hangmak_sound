@@ -14,7 +14,6 @@ typedef Vec3 Pt;
 Pt pt(GLfloat, GLfloat, GLfloat);
 
 void vert3(Pt);
-Pt vec_add(Pt, Pt);
 
 void quad(Pt, Pt, Pt, Pt);
 

@@ -60,6 +60,8 @@ Array Surface_arr(int, ...);
 Array GLdouble_arr(int, ...);
 Array Vec2_arr(int, ...);
 
+Vec3 vec_add(Vec3, Vec3);
+
 Vec3 cross(Vec3, Vec3);
 //Vec3 norm(Vec3);
 
