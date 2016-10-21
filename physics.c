@@ -69,5 +69,5 @@ int within_bounds(Vec3 a, Surface s) { return a.x>=s.bl.x&&a.x<=s.tr.x
                                             &&a.z>=s.bl.z&&a.z<=s.tr.z; }
 int test_collision_below(Vec3 a, Vec3 a_next, Surface s) {
   return within_bounds(a_next,s)
-       &&((a.y<s.fun(a.x,a.z)&&a_next.y>s.fun(a.x,a.z))
-        ||(a.y>s.fun(a.x,a.z)&&a_next.y<s.fun(a.x,a.z))); }
+       &&((a.y<=s.fun(a.x,a.z)&&a_next.y>=s.fun(a_next.x,a_next.z))
+        ||(a.y>=s.fun(a.x,a.z)&&a_next.y<=s.fun(a_next.x,a_next.z))); }

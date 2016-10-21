@@ -170,7 +170,7 @@ void psound_det(PaStream *stream) {
 //GLfloat deg_rad(GLfloat a) { return a*M_PI/180; }
 
 void paint(GLFWwindow *win, GLuint prog, GState g) { glLoadIdentity();
-  glTranslatef(0,0,-1.5);
+  glTranslatef(0,0,/*-1.5*/-5);
   glRotatef(g.ca.cxz,0,-cos(deg_rad(g.ca.cyz)),-sin(deg_rad(g.ca.cyz))); glRotatef(g.ca.cyz,1,0,0);
 
   glColor4f(1.0,0.0,0.0,1.0);
@@ -231,7 +231,7 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     //p.type = RIGID_COLLISION; p.pts = Vec3_arr(4,v3(-1,0,-1),v3(1,0,-1),v3(1,0,1),v3(-1,0,1));
     //p.normal = norm(v3(0,1,0)); // DONE: normalize
 
-    s.bl = v3(-1,0,-1); s.tr = v3(1,0,1); s.effect_type = RIGID_COLLISION;
+    s.bl = v3(-2,0,-2); s.tr = v3(2,0,2); s.effect_type = RIGID_COLLISION;
     s.fun = func_sin5;
 
     // ======================================== //
@@ -269,9 +269,9 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
       procInput(&g,window);
       //if(test_collision_below(P_VEC,s)) { rigid_collision(&g,v3(
       //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
-      if(test_collision_below(P_VEC,next_position(g),s)) { //GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
+      if(test_collision_below(P_VEC,next_position(g),s)) { GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
         //rigid_collision_simp(&g,v3(cos(atan(n)),sin(atan(n)),0)); }
-        g.pl.vel = v3(0,0,0); }
+        g.pl.vel = v3((n<0?-1:1)*0.01*cos(atan2(n,1)),(n<0?-1:1)*0.01*sin(atan2(n,1)),0); }
       glfwSwapBuffers(window);
       glfwPollEvents(); }
     error:
