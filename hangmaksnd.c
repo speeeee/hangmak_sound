@@ -64,6 +64,9 @@ GEN_FUNCTION(sin5,COMPOSE(sin,COMPOSE_X(mul_5)))
 
 // assume that y does not change with z.
 GLfloat deriv_sin5_x(GLfloat x, GLfloat z) { return 5*cos(5*x); }
+// gradient
+Vec2 deriv_sin5_xg(GLfloat x, GLfloat z) { return v2(5*cos(5*x),0); }
+Vec3 with_y(Vec2 xz) { return v3(xz.x,1,xz.y); }
 
 GLfloat x_squared(GLfloat x, GLfloat z) { return pow(x,2.); }
 Surface s;
@@ -270,7 +273,9 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
       //if(test_collision_below(P_VEC,s)) { rigid_collision(&g,v3(
       //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
       if(test_collision_below(P_VEC,next_position(g),s)) { GLfloat n = -1./deriv_sin5_x(g.pl.x,g.pl.z);
-        //rigid_collision_simp(&g,v3(cos(atan(n)),sin(atan(n)),0)); }
+        Vec3 nn = norm(with_y(deriv_sin5_xg(g.pl.x,g.pl.z)));
+        printf("<%g, %g, %g>\n", nn.x, nn.y, nn.z);
+        //g.pl.vel = 
         g.pl.vel = v3((n<0?-1:1)*0.01*cos(atan2(n,1)),(n<0?-1:1)*0.01*sin(atan2(n,1)),0); }
       glfwSwapBuffers(window);
       glfwPollEvents(); }

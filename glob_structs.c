@@ -72,9 +72,9 @@ Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
 Vec3 inv(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
-GLfloat vec_len(Vec3 a) { pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
+GLfloat vec_len(Vec3 a) { return pow(a.x*a.x+a.y*a.y+a.z*a.z,0.5); }
 
-Vec3 norm(Vec3 a) { GLfloat len = vec_len(a);
+Vec3 norm(Vec3 a) { GLfloat len = vec_len(a); printf("%g\n",len);
   return v3(a.x/len,a.y/len,a.z/len); }
 
 // assume correctly sized for multiplication.
