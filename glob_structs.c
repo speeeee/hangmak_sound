@@ -67,6 +67,8 @@ ARRAY_FOR_TYPE(GLdouble)
 ARRAY_FOR_TYPE(Vec2)
 
 Vec3 vec_add(Vec3 a, Vec3 b) { return v3(a.x+b.x,a.y+b.y,a.z+b.z); }
+Vec3 vec_mul(Vec3 a, Vec3 b) { return v3(a.x*b.x,a.y*b.y,a.z*b.z); }
+Vec3 scalar_mul(GLfloat scalar, Vec3 a) { return v3(scalar*a.x,scalar*a.y,scalar*a.z); }
 
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
@@ -74,7 +76,7 @@ Vec3 cross(Vec3 a, Vec3 b) {
 Vec3 inv(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 GLfloat vec_len(Vec3 a) { return pow(a.x*a.x+a.y*a.y+a.z*a.z,0.5); }
 
-Vec3 norm(Vec3 a) { GLfloat len = vec_len(a); printf("%g\n",len);
+Vec3 norm(Vec3 a) { GLfloat len = vec_len(a);
   return v3(a.x/len,a.y/len,a.z/len); }
 
 // assume correctly sized for multiplication.
@@ -92,8 +94,10 @@ Vec3 rotate_vec(GLfloat tht, Vec3 subj, Vec3 axis) {
   free(rotation_matrix.pts.a);
   return transform3(rotation_matrix,subj); }
 
-GLfloat dot(Vec3 a, Vec3 b) { a.x*b.x+a.y*b.y+a.z*b.z; }
+GLfloat dot(Vec3 a, Vec3 b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
+GLfloat dot2(Vec2 a, Vec2 b) { return a.x*b.x+a.y*b.y; }
+#define dot_aa(AA,AB,A,B)  dot2(v2(A.AA,A.AB),v2(B.AA,B.AB))
 
-GLfloat angle(Vec3 a, Vec3 b) { return dot(a,b)/vec_len(a)*vec_len(b); }
+GLfloat angle(Vec3 a, Vec3 b) { return acos(dot(a,b)/(vec_len(a)*vec_len(b))); }
 
 void vert3(Vec3 a) { glVertex3f(a.x,a.y,a.z); }
