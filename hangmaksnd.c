@@ -59,6 +59,7 @@ void g_add_instr(Instr **a, int esz, int sz, ...) { va_list vl; va_start(vl,sz);
 PLANE(45_tilt,v3(pow(2.,0.5),pow(2.,0.5),0))
 FUNCTION_JUST_X(sine,sin)
 
+// func_sin5
 GLfloat mul_5(GLfloat x) { return 5*x; }
 GEN_FUNCTION(sin5,COMPOSE(sin,COMPOSE_X(mul_5)))
 
@@ -224,10 +225,12 @@ void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
      All predicates take a GState as their input. */
 int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     PaStreamParameters oP; PaStream *stream;
-    GState g = (GState) { vect3(-M_PI/10,0.5,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
+    GState g = (GState) { vect3(0,0.5,0), (Camera) { 0, 0 }, (KState) { 0, 0, 0, 0, 0 }, 0,
                           a, 0, GRAVITY };
     g_add_instr(&g.evs,g.esz++,1,trumpet);
     GLFWwindow* window;
+
+    //g.pl.vel.z = 0.001;
 
     // == allocation of TEST globals ========== //
 
@@ -268,23 +271,27 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
     //glfwSetKeyCallback(window, key_callback);
     psound_det(stream);
     while (!glfwWindowShouldClose(window)) {
-      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g); 
-      procInput(&g,window);
+      glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); paint(window,prog,g);
       //if(test_collision_below(P_VEC,s)) { rigid_collision(&g,v3(
       //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
+      procInput(&g,window);
       if(test_collision_below(P_VEC,next_position(g),s)) {
         // get vector that is the gradient at the point of f(x,z) with y as -1.
         //   this is the desired tangent vector.
         Vec3 nn = scalar_mul(-1,norm(with_y(deriv_sin5_xg(g.pl.x,g.pl.z))));
         // get angle (theta) between the vector and the y-axis.
-        GLfloat tht = angle(nn,v3(0,-1,0)); printf("%g\n",tht);
+        GLfloat tht = angle(nn,v3(0,-1,0)); //printf("%g\n",tht);
         // new vector where x and z are simply their partial derivatives and
         //   y is based off of the angle between the y-axis and the gradient vector.
         Vec3 newv = v3(nn.x,-2*nn.y*cos(tht),nn.z);
         //printf("<%g, %g, %g>\n", nn.x, nn.y, nn.z);
         // add to the old velocity |old velocity|*newv.
+        GLfloat y_pos = func_sin5(g.pl.x,g.pl.z);
+        // set position to same as function but with small offset to reduce floating-point error.
+        g.pl.y = y_pos+0.01*(GLfloat)signum(g.pl.y-y_pos);
         g.pl.vel = vec_add(g.pl.vel,scalar_mul(vec_len(g.pl.vel),newv)); }
         //g.pl.vel = v3((n<0?-1:1)*0.01*cos(atan2(n,1)),(n<0?-1:1)*0.01*sin(atan2(n,1)),0); }
+      //procInput(&g,window);
       glfwSwapBuffers(window);
       glfwPollEvents(); }
     error:
