@@ -16,16 +16,24 @@ Vec3 next_position(GState g) {
 
 // all is done using wrt the y-axis.
 
-void rigid_collision(GState *g, Vec3 normal) { Vec3 ivel = inv(g->pl.vel);
-  GLfloat tht = angle(ivel,normal);
-  Vec3 pla = cross(ivel,normal); // vector normal to plane with angle of vel wrt normal.
-  // DONE: reflect velocity of ball wrt normal.  rotate wrt plane normal.
-  // DONE: reflect position of ball wrt normal.  rotate wrt plane normal.
-  g->pl.vel = rotate_vec(tht,ivel,norm(pla)); }
-// intentionally incorrect for testing.
-void rigid_collision_simp(GState *g, Vec3 normal) {
-  GLfloat l = vec_len(g->pl.vel); Vec3 nn = norm(normal);
-  g->pl.vel = v3(l*nn.x,l*nn.y,l*nn.z); }
+void rigid_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
+  // get vector that is the gradient at the point of f(x,z) with y as -1.
+  //   this is the desired tangent vector.
+  Vec3 nn = scalar_mul(-1,norm(with_y(d_fun(g->pl.x,g->pl.z))));
+  // get angle (theta) between the vector and the y-axis.
+  GLfloat tht = angle(nn,v3(0,-1,0)); //printf("%g\n",tht);
+  // new vector where x and z are simply their partial derivatives and
+  //   y is based off of the angle between the y-axis and the gradient vector.
+  Vec3 newv = v3(nn.x,-2*nn.y*cos(tht),nn.z);
+  //printf("<%g, %g, %g>\n", nn.x, nn.y, nn.z);
+  // add to the old velocity |old velocity|*newv.
+  GLfloat y_pos = fun(g->pl.x,g->pl.z);
+  // set position to same as function but with small offset to reduce floating-point error.
+  g->pl.y = y_pos+0.01*(GLfloat)signum(g->pl.y-y_pos);
+  g->pl.vel = vec_add(g->pl.vel,scalar_mul(vec_len(g->pl.vel),newv)); }
+void normal_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
+  Vec3 nn = norm(with_y(d_fun(g->pl.x,g->pl.z)));
+  g->pl.vel = scalar_mul(vec_len(g->pl.vel),v3(-nn.x,nn.y,-nn.z)); }
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array a, Vec3 axis) {

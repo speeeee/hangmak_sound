@@ -12,8 +12,8 @@ Vec3 next_position(GState);
 
 // all is done using the y-axis.
 
-void rigid_collision(GState *, Vec3);
-void rigid_collision_simp(GState *, Vec3);
+void rigid_collision(GState *, FuncXZ, GradXZ);
+void normal_collision(GState *, FuncXZ, GradXZ);
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array, Vec3);
