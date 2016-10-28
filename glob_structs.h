@@ -18,6 +18,7 @@ typedef struct Matrix Matrix;
 typedef void (*StateChange)(GState *);
 typedef void (*CollEffect)(GState *, Vec3 /* normal */);
 typedef GLfloat (*FuncXZ)(GLfloat x, GLfloat z);
+typedef Vec2 (*GradXZ)(GLfloat x, GLfloat z);
 
 typedef struct { GLfloat cxz; GLfloat cyz; } Camera;
 typedef struct { GLfloat x; GLfloat y; GLfloat z; GLfloat tht; GLfloat phi; } KState;
@@ -61,6 +62,8 @@ Array Plane_arr(int, ...);
 Array Surface_arr(int, ...);
 Array GLdouble_arr(int, ...);
 Array Vec2_arr(int, ...);
+
+Vec3 with_y(Vec2);
 
 Vec3 vec_add(Vec3, Vec3);
 Vec3 vec_mul(Vec3, Vec3);

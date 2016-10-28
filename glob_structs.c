@@ -66,6 +66,8 @@ ARRAY_FOR_TYPE(Surface)
 ARRAY_FOR_TYPE(GLdouble)
 ARRAY_FOR_TYPE(Vec2)
 
+Vec3 with_y(Vec2 xz) { return v3(xz.x,1,xz.y); }
+
 Vec3 vec_add(Vec3 a, Vec3 b) { return v3(a.x+b.x,a.y+b.y,a.z+b.z); }
 Vec3 vec_mul(Vec3 a, Vec3 b) { return v3(a.x*b.x,a.y*b.y,a.z*b.z); }
 Vec3 scalar_mul(GLfloat scalar, Vec3 a) { return v3(scalar*a.x,scalar*a.y,scalar*a.z); }
