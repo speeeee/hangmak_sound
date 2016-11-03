@@ -15,6 +15,7 @@ Vec3 next_position(GState);
 void rigid_collision(GState *, FuncXZ, GradXZ);
 void normal_collision(GState *, FuncXZ, GradXZ);
 void normal_degrade_collision(GState *, FuncXZ, GradXZ);
+void normal2_collision(GState *, FuncXZ, GradXZ);
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array, Vec3);
