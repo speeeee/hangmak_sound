@@ -6,13 +6,20 @@
 
 #define FLOAT_MIN (-65535)
 #define EPSILON (0.01)
+
+#define DEGRADE_FACTOR (0.8) // 0.9 degrade is strange.
 //#define INFINITY (1./0)
 
+/*Vec3 next_position(GState g) {
+  // change acceleration and velocity
+  Vec3 na = v3(0.,g.gravity,0.); Vec3 nv = vec_add(na,g.pl.vel); 
+  // change position
+  return v3(g.pl.x+g.pl.vel.x, g.pl.y+g.pl.vel.y, g.pl.z+g.pl.vel.z); }*/
 Vec3 next_position(GState g) {
   // change acceleration and velocity
   Vec3 na = v3(0.,g.gravity,0.); Vec3 nv = vec_add(na,g.pl.vel); 
   // change position
-  return v3(g.pl.x+g.pl.vel.x, g.pl.y+g.pl.vel.y, g.pl.z+g.pl.vel.z); }
+  return v3(g.pl.x+nv.x, g.pl.y+nv.y, g.pl.z+nv.z); }
 
 // all is done using wrt the y-axis.
 
@@ -34,6 +41,12 @@ void rigid_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
 void normal_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
   Vec3 nn = norm(with_y(d_fun(g->pl.x,g->pl.z)));
   g->pl.vel = scalar_mul(vec_len(g->pl.vel),v3(-nn.x,nn.y,-nn.z)); }
+void normal_degrade_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
+  Vec3 nn = norm(with_y(d_fun(g->pl.x,g->pl.z)));
+  g->pl.vel = scalar_mul(DEGRADE_FACTOR*vec_len(g->pl.vel),v3(-nn.x,nn.y,-nn.z));
+  //g->pl.y += g->pl.vel.y;
+  printf("%g, %g, %g, (%g)\n",nn.y, fun(g->pl.x,g->pl.z), g->pl.y, g->pl.vel.y);
+  g->pl.vel.y -= 0.005*(1-nn.y); }
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array a, Vec3 axis) {
@@ -76,6 +89,7 @@ int ray_intersects(Vec2 v, Vec3 pa, Vec3 pb) {
 int within_bounds(Vec3 a, Surface s) { return a.x>=s.bl.x&&a.x<=s.tr.x
                                             &&a.z>=s.bl.z&&a.z<=s.tr.z; }
 int test_collision_below(Vec3 a, Vec3 a_next, Surface s) {
+  if(a.y>=s.fun(a.x,a.z)-0.01) { printf("NOW: %g, NEXT: %g, Y: %g\n",a.y,a_next.y,s.fun(a.x,a.z)); }
   return within_bounds(a_next,s)
        &&((a.y<=s.fun(a.x,a.z)&&a_next.y>=s.fun(a_next.x,a_next.z))
         ||(a.y>=s.fun(a.x,a.z)&&a_next.y<=s.fun(a_next.x,a_next.z))); }
