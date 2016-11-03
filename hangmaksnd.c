@@ -33,7 +33,7 @@
 
 #define TRUMPET0 0
 
-#define GRAVITY (-0.0001)
+#define GRAVITY (-0.0005)
 
 #define P_VEC v3(g.pl.x,g.pl.y,g.pl.z)
 #define P_VEC_PT v3(g->pl.x,g->pl.y,g->pl.z)
@@ -208,6 +208,7 @@ KState getInput(GLFWwindow *win) { KState n;
 // TODO: make into a vect3 the position.
 void procInput(GState *g, GLFWwindow *win) { KState a =  getInput(win);
   GLfloat cx = sin(deg_rad(g->ca.cxz)); GLfloat cz = -cos(deg_rad(g->ca.cxz));
+  
   // change acceleration and velocity
   g->pl.acc = v3(0.,g->gravity,0.); g->pl.vel = vec_add(g->pl.acc,g->pl.vel); 
   // change position
@@ -275,7 +276,8 @@ int main(void) { init_instrs(); Instr trumpet = instr(0,0); Instr *a = NULL;
       //if(within_bounds(P_VEC,s)) { printf("in the bounds\n"); }
       procInput(&g,window);
       if(test_collision_below(P_VEC,next_position(g),s)) {
-        /*rigid*/normal_collision(&g,func_sin5,deriv_sin5_xg); }
+        /*rigid*//*normal*/normal_degrade_collision(&g,func_sin5,deriv_sin5_xg); }
+        //if(g.pl.vel.y<-GRAVITY) { printf("HERE");g.pl.vel.y = 0; g.pl.y = func_sin5(g.pl.x,g.pl.z); } }
         //g.pl.vel = v3((n<0?-1:1)*0.01*cos(atan2(n,1)),(n<0?-1:1)*0.01*sin(atan2(n,1)),0); }
       //procInput(&g,window);
       glfwSwapBuffers(window);
