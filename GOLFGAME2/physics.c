@@ -50,7 +50,8 @@ void normal_degrade_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
   g->pl.vel.y -= 0.005*(1-nn.y); }
 void normal2_collision(GState *g, FuncXZ fun, GradXZ d_fun) {
   Vec3 nn = norm(with_y(d_fun(g->pl.x,g->pl.z)));
-  g->pl.vel = vec_add(g->pl.vel,scalar_mul(AUGMENT*vec_len(g->pl.vel),v3(-nn.x,nn.y,-nn.z))); }
+  GLfloat rel = -dot(v3(-nn.x,nn.y,-nn.z),norm(g->pl.vel)); printf("%g\n",rel);
+  g->pl.vel = vec_add(g->pl.vel,scalar_mul((1+rel)*vec_len(g->pl.vel),v3(-nn.x,nn.y,-nn.z))); }
 
 // warning: free result.
 Vec3 *project_wrt_normal(/* Vec3 */ Array a, Vec3 axis) {
