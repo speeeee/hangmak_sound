@@ -14,15 +14,25 @@
 //   the following must be true: 0 <= A <= 1, 0 <= B <= 1, 0 <= C <= 1.
 
 // expects a triangle and a 2D vector. 
-int in_triangle(Vec2 a, Triangle b) {
+int in_triangle(Vec2 e, Triangle b) {
   float de = ((b.b.z-b.c.z)*(b.a.x-b.c.x)+(b.c.x-b.b.x)*(b.a.z-b.c.z));
-  float a = ((b.b.z-b.c.z)*(a.x-b.c.x)+(b.c.x-b.b.x)*(a.z-b.c.z))/de;
-  float b = ((b.c.z-b.a.z)*(a.x-b.c.x)+(b.a.x-b.c.x)*(a.z-b.c.z))/de;
-  return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= (1-a-b) && (1-a-b) <= 1; }
+  float a = ((b.b.z-b.c.z)*(e.x-b.c.x)+(b.c.x-b.b.x)*(e.z-b.c.z))/de;
+  float r = ((b.c.z-b.a.z)*(e.x-b.c.x)+(b.a.x-b.c.x)*(e.z-b.c.z))/de;
+  return 0 <= a && a <= 1 && 0 <= r && r <= 1 && 0 <= (1-a-r) && (1-a-r) <= 1; }
 
 // TODO: for now, do simple bounds-checking by projecting triangle onto XZ-axis.
 //     : this however makes near-vertical triangles easy to pass; this is a temporary solution.
+//     : the predicted next state should be used for this.
 
 // finds distance between point and triangle (or the plane parallel to triangle) by
 //   Hesse normal form. (distance can be negative)
 float dist_pt_plane(Vec3 pt, Triangle a) { return dot(vsub3(pt,a.pos),a.norm); }
+
+int sign(float a) { return (a>0)-(a<0); }
+
+// tests if two 3D-vector states s1 and s2 are on opposing sides of plane parallel to triangle a.
+// TODO: add buffer zone to account for floating-point error. (the point could be calculated wrong
+//     : when on the plane at a certain state.
+int pl_side(Vec3 s1, Vec3 s2, Triangle a) {
+  float r1 = sign(dist_pt_plane(s1,a)); float r2 = sign(dist_pt_plane(s2,a));
+  return !r1||!r2||!(r1+r2); }
