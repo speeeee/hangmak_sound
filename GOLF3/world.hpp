@@ -17,10 +17,15 @@ Vec2 v2(float,float);
 Vec2 vsub2(Vec2, Vec2);
 Vec3 vsub3(Vec3, Vec3);
 
+Vec2 vadd2(Vec2, Vec2);
+Vec3 vadd3(Vec3, Vec3);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; } Projectile;
 
 typedef struct { Vec3 pos; Vec2 a; Vec2 b; Vec2 c; Vec3 norm; /* Function reaction; */ } Triangle;
 Triangle triangle(Vec3, Vec2, Vec2, Vec2, Vec3);
+// pos is a point on the plane parallel to the triangle.  it will be in the same spot as the
+//   centroid when drawn.
 /*
 a-b
 |/

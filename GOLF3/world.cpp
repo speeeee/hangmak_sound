@@ -11,6 +11,9 @@ Vec2 centroid(Triangle a) { return v2((a.a.x+a.b.x+a.c.x)/3.,(a.a.z+a.b.z+a.c.z)
 Vec2 vsub2(Vec2 a, Vec2 b) { return v2(a.x-b.x,a.z-b.z); }
 Vec3 vsub3(Vec3 a, Vec3 b) { return v3(a.x-b.x,a.y-b.y,a.z-b.z); }
 
+Vec2 vadd2(Vec2 a, Vec2 b) { return v2(a.x+b.x,a.z+b.z); }
+Vec3 vadd3(Vec3 a, Vec3 b) { return v3(a.x+b.x,a.y+b.y,a.z+b.z); }
+
 Triangle t_centroid(Triangle a) { Vec2 c = centroid(a);
   return triangle(a.pos,vsub2(a.a,c),vsub2(a.b,c),vsub2(a.c,c),a.norm); }
 
