@@ -7,3 +7,5 @@
 
 // next state of a projectile's motion ignoring collisions.
 Projectile next_state(Projectile);
+
+// if pl_side is true, add normal vector scaled to current.

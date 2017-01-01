@@ -20,6 +20,13 @@ Vec3 vsub3(Vec3, Vec3);
 Vec2 vadd2(Vec2, Vec2);
 Vec3 vadd3(Vec3, Vec3);
 
+Vec2 proj_xz(Vec3);
+
+// multiplies each component of the two vectors together.
+Vec3 vcmul(Vec3, Vec3);
+// multiplies vector by scalar.
+Vec3 vsmul(float, Vec3);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3);
 

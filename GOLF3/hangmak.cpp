@@ -32,12 +32,15 @@ int main() {
   // TODO: fix angle.
   //Triangle a = triangle(v2(0,0),v2(0,1),v2(1,0),v3(0.5,0.5,0));
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,0,0));
-  w->t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),v3(0.5,0.5,0))));
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,1,0));
+  w->t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   //glRotatef(30,-1,0,0);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
-    paint(w); w->p = next_state(w->p); window.display(); } return 0; }
+    paint(w); Projectile pp = next_state(w->p);
+    if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side(w->p.pos,pp.pos,w->t[0])) {
+      pp.vel = vadd3(pp.vel,vsmul(len(pp.vel),w->t[0].norm)); w->p.acc = pp.acc; w->p.vel = pp.vel; }
+    else { w->p = pp; } window.display(); } return 0; }
   //while(window.isOpen()) { sf::Event event;
   //  while(window.pollEvent(event)) { if(event.type == sf::Event::Closed) { window.close(); } }
   //  window.clear(); window.draw(shape); window.display(); } return 0; }
