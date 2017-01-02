@@ -16,13 +16,14 @@ void d_v2(Vec2 a) { glVertex3f(a.x,0,a.z); }
 void d_tri(Triangle a) { glPushMatrix(); Vec3 c = cross(a.norm,v3(0,1,0));
   glRotatef(180/M_PI*angle(a.norm,v3(0,1,0)),-c.x,-c.y,-c.z);
   glBegin(GL_TRIANGLES); d_v2(a.a); d_v2(a.b); d_v2(a.c); glEnd(); glPopMatrix(); }
-void d_square(float x, float y, float w) { glBegin(GL_QUADS);
-  glVertex3f(x,y,0); glVertex3f(x+w,y,0); glVertex3f(x+w,y+w,0); glVertex3f(x,y+w,0);
+void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
+  glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
 
 void paint(World *w) { glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glColor3f(0,1,0); d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,0.1);
-  glColor3f(1,0,0); glRotatef(10,-1,0,0); d_tri(w->t[0]); }
+  glRotatef(30,-1,0,0);
+  glColor3f(1,0,0); d_tri(w->t[0]);
+  glColor3f(0,1,0); d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
 int main() {
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, sf::ContextSettings(32));
