@@ -25,9 +25,15 @@ void paint(World *w) { glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_
   glColor3f(1,0,0); d_tri(w->t[0]);
   glColor3f(0,1,0); d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
+void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
+  glDisable(GL_LIGHTING); /* temporary */ glViewport(0,0,window->getSize().x,window->getSize().y);
+  glMatrixMode(GL_PROJECTION); glLoadIdentity();
+  float ratio = window->getSize().x/window->getSize().y;
+  glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f); }
+
 int main() {
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, sf::ContextSettings(32));
-  window.setVerticalSyncEnabled(true);
+  window.setVerticalSyncEnabled(true); gl_init(&window);
   //sf::CircleShape shape(100.f);
   //shape.setFillColor(sf::Color::Blue);
   // TODO: fix angle.
