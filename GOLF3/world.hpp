@@ -27,6 +27,9 @@ Vec3 vcmul(Vec3, Vec3);
 // multiplies vector by scalar.
 Vec3 vsmul(float, Vec3);
 
+// negate components of vector
+Vec3 vneg(Vec3);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3);
 

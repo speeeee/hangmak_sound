@@ -39,7 +39,9 @@ int main() {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w); Projectile pp = next_state(w->p);
     if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side(w->p.pos,pp.pos,w->t[0])) {
-      pp.vel = vadd3(pp.vel,vsmul(len(pp.vel),w->t[0].norm)); w->p.acc = pp.acc; w->p.vel = pp.vel; }
+      // pp.vel = pp.vel - 2(pp.vel . normal)normal
+      pp.vel = vsub3(pp.vel,vsmul(2*dot(pp.vel,w->t[0].norm),w->t[0].norm));
+      w->p.acc = pp.acc; w->p.vel = pp.vel; }
     else { w->p = pp; } window.display(); } return 0; }
   //while(window.isOpen()) { sf::Event event;
   //  while(window.pollEvent(event)) { if(event.type == sf::Event::Closed) { window.close(); } }
