@@ -1,3 +1,6 @@
+#ifndef BOUNDS_HPP
+#define BOUNDS_HPP
+
 #include <cmath>
 
 #include "world.hpp"
@@ -27,4 +30,4 @@ float dist_pt_plane(Vec3, Triangle);
 // TODO: add buffer zone to account for floating-point error. (the point could be calculated wrong
 //     : when on the plane at a certain state.
 int pl_side(Vec3, Vec3, Triangle);
-
+#endif
