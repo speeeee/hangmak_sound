@@ -1,9 +1,8 @@
 #include "world.hpp"
-// uses Projectile.
+#include "bounds.hpp"
 
-// constant for gravity.  expected to be set to y-val of acceleration multiplied by a number
-//   representing mass.
-#define GRAVITY (-0.01)
+#include <memory>
+// uses Projectile.
 
 // next state of a projectile's motion ignoring collisions.
 Projectile next_state(Projectile a) { Vec3 nv = vadd3(a.acc, a.vel);
@@ -11,3 +10,13 @@ Projectile next_state(Projectile a) { Vec3 nv = vadd3(a.acc, a.vel);
 
 // use the vector normal to the test surface to find the correct point along the shell of
 //   the projectile.
+typedef std::function<void(World *, Projectile)> CollisionF;
+
+void test_collide(World *w, Projectile pp, CollisionF cf) {
+  if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side(w->p.pos,pp.pos,w->t[0])) {
+    cf(w,pp); } else { w->p = pp; } }
+
+void rigid_elastic(World *w, Projectile pp) {
+  // pp.vel = pp.vel - 2(pp.vel . normal)normal
+  pp.vel = vsmul(DEGRADE,vsub3(pp.vel,vsmul(2*dot(pp.vel,w->t[0].norm),w->t[0].norm)));
+  w->p.acc = pp.acc; w->p.vel = pp.vel; }

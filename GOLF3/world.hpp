@@ -3,6 +3,9 @@
 
 #include <vector>
 
+#define GRAVITY (-0.0005)
+#define DEGRADE (0.6)
+
 typedef struct { float x; float y; float z; } Vec3;
 Vec3 v3(float,float,float);
 Vec3 cross(Vec3, Vec3);
