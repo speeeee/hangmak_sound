@@ -6,14 +6,14 @@
 
 // next state of a projectile's motion ignoring collisions.
 Projectile next_state(Projectile a) { Vec3 nv = vadd3(a.acc, a.vel);
-  return (Projectile) { a.acc, nv, vadd3(nv,a.pos) }; }
+  return (Projectile) { a.acc, nv, vadd3(nv,a.pos), a.rad }; }
 
 // use the vector normal to the test surface to find the correct point along the shell of
 //   the projectile.
 typedef std::function<void(World *, Projectile)> CollisionF;
 
 void test_collide(World *w, Projectile pp, CollisionF cf) {
-  if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side(w->p.pos,pp.pos,w->t[0])) {
+  if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side_ball(w->p,pp,w->t[0])) {
     cf(w,pp); } else { w->p = pp; } }
 
 void rigid_elastic(World *w, Projectile pp) {

@@ -21,7 +21,8 @@ Vec3 vsmul(float a, Vec3 b) { return v3(a*b.x,a*b.y,a*b.z); }
 
 Vec3 vneg(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 
-Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos) { return (Projectile) { acc, vel, pos }; }
+Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos, float rad) {
+  return (Projectile) { acc, vel, pos, rad }; }
 
 Triangle t_centroid(Triangle a) { Vec2 c = centroid(a);
   return triangle(a.pos,vsub2(a.a,c),vsub2(a.b,c),vsub2(a.c,c),a.norm); }

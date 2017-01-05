@@ -33,8 +33,8 @@ Vec3 vsmul(float, Vec3);
 // negate components of vector
 Vec3 vneg(Vec3);
 
-typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; } Projectile;
-Projectile projectile(Vec3, Vec3, Vec3);
+typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; float rad; } Projectile;
+Projectile projectile(Vec3, Vec3, Vec3, float);
 
 typedef struct { Vec3 pos; Vec2 a; Vec2 b; Vec2 c; Vec3 norm; /* Function reaction; */ } Triangle;
 Triangle triangle(Vec3, Vec2, Vec2, Vec2, Vec3);
