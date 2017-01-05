@@ -27,6 +27,8 @@ int in_triangle(Vec2 e, Triangle b) {
 // finds distance between point and triangle (or the plane parallel to triangle) by
 //   Hesse normal form. (distance can be negative)
 float dist_pt_plane(Vec3 pt, Triangle a) { return dot(vsub3(pt,a.pos),a.norm); }
+float dist_ball_plane(Projectile b, Triangle a) {
+  return dist_pt_plane(vadd3(vneg(vsmul(b.rad,unit(a.norm))),b.pos),a); }
 
 int sign(float a) { return (a>0)-(a<0); }
 
@@ -35,4 +37,7 @@ int sign(float a) { return (a>0)-(a<0); }
 //     : when on the plane at a certain state.
 int pl_side(Vec3 s1, Vec3 s2, Triangle a) {
   float r1 = sign(dist_pt_plane(s1,a)); float r2 = sign(dist_pt_plane(s2,a));
+  return !r1||!r2||!(r1+r2); }
+int pl_side_ball(Projectile p1, Projectile p2, Triangle a) {
+  float r1 = sign(dist_ball_plane(p1,a)); float r2 = sign(dist_ball_plane(p2,a));
   return !r1||!r2||!(r1+r2); }
