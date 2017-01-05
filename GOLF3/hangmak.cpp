@@ -31,25 +31,18 @@ void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE)
   float ratio = window->getSize().x/window->getSize().y;
   glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f); }
 
+// TODO: map through all triangles instead of just first.
+// TODO: change projectile graphic with circle.
+
 int main() {
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, sf::ContextSettings(32));
   window.setVerticalSyncEnabled(true); gl_init(&window);
-  //sf::CircleShape shape(100.f);
-  //shape.setFillColor(sf::Color::Blue);
-  // TODO: fix angle.
+  // DONE: fix angle.
   //Triangle a = triangle(v2(0,0),v2(0,1),v2(1,0),v3(0.5,0.5,0));
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,1,0));
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,1,0),0.05);
   w->t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0,1,0)))));
-  //glRotatef(30,-1,0,0);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w); Projectile pp = next_state(w->p); test_collide(w,pp,rigid_elastic);
-    /*if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side(w->p.pos,pp.pos,w->t[0])) {
-      // pp.vel = pp.vel - 2(pp.vel . normal)normal
-      pp.vel = vsmul(DEGRADE,vsub3(pp.vel,vsmul(2*dot(pp.vel,w->t[0].norm),w->t[0].norm)));
-      w->p.acc = pp.acc; w->p.vel = pp.vel; }
-    else { w->p = pp; }*/ window.display(); } return 0; }
-  //while(window.isOpen()) { sf::Event event;
-  //  while(window.pollEvent(event)) { if(event.type == sf::Event::Closed) { window.close(); } }
-  //  window.clear(); window.draw(shape); window.display(); } return 0; }
+    window.display(); } return 0; }
