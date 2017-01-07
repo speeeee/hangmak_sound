@@ -14,10 +14,10 @@
 //   the following must be true: 0 <= A <= 1, 0 <= B <= 1, 0 <= C <= 1.
 
 // expects a triangle and a 2D vector. 
-int in_triangle(Vec2 e, Triangle b) {
+int in_triangle(Vec2 e, Triangle b) { Vec2 et = vsub2(e,proj_xz(b.pos));
   float de = ((b.b.z-b.c.z)*(b.a.x-b.c.x)+(b.c.x-b.b.x)*(b.a.z-b.c.z));
-  float a = ((b.b.z-b.c.z)*(e.x-b.c.x)+(b.c.x-b.b.x)*(e.z-b.c.z))/de;
-  float r = ((b.c.z-b.a.z)*(e.x-b.c.x)+(b.a.x-b.c.x)*(e.z-b.c.z))/de;
+  float a = ((b.b.z-b.c.z)*(et.x-b.c.x)+(b.c.x-b.b.x)*(et.z-b.c.z))/de;
+  float r = ((b.c.z-b.a.z)*(et.x-b.c.x)+(b.a.x-b.c.x)*(et.z-b.c.z))/de;
   return 0 <= a && a <= 1 && 0 <= r && r <= 1 && 0 <= (1-a-r) && (1-a-r) <= 1; }
 
 // TODO: for now, do simple bounds-checking by projecting triangle onto XZ-axis.

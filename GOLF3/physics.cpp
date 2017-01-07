@@ -10,13 +10,14 @@ Projectile next_state(Projectile a) { Vec3 nv = vadd3(a.acc, a.vel);
 
 // use the vector normal to the test surface to find the correct point along the shell of
 //   the projectile.
-typedef std::function<void(World *, Projectile)> CollisionF;
+typedef std::function<Projectile(World *, Projectile)> CollisionF;
 
-void test_collide(World *w, Projectile pp, CollisionF cf) {
-  if(in_triangle(proj_xz(pp.pos),w->t[0])&&pl_side_ball(w->p,pp,w->t[0])) {
-    cf(w,pp); } else { w->p = pp; } }
+void test_collide(World *w, Projectile pp, CollisionF cf) { Projectile res = pp;
+  for(int i=0;i<w->t.size();i++) {
+    if(in_triangle(proj_xz(pp.pos),w->t[i])&&pl_side_ball(w->p,pp,w->t[i])) {
+      res = cf(w,res); } } w->p = res; }
 
-void rigid_elastic(World *w, Projectile pp) {
+Projectile rigid_elastic(World *w, Projectile pp) {
   // pp.vel = pp.vel - 2(pp.vel . normal)normal
   pp.vel = vsmul(DEGRADE,vsub3(pp.vel,vsmul(2*dot(pp.vel,w->t[0].norm),w->t[0].norm)));
-  w->p.acc = pp.acc; w->p.vel = pp.vel; }
+  /*w->p.acc = pp.acc; w->p.vel = pp.vel;*/ pp.pos = w->p.pos; return pp; }
