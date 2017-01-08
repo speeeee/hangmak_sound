@@ -39,7 +39,7 @@ void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE)
 //     : each time.
 // TODO: increase performace of logic by having a bounding rectangle that encases each triangle.
 //     : this will be the first pass of collision detection.
-// TODO: fix apparent error with collision with second triangle in test.
+// DONE: fix apparent error with collision with second triangle in test.
 
 int main() {
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, sf::ContextSettings(32));
