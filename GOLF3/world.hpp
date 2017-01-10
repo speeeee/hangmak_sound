@@ -2,6 +2,7 @@
 #define WORLD_HPP
 
 #include <vector>
+#include <memory>
 
 #define GRAVITY (-0.0005)
 #define DEGRADE (0.6)
@@ -50,7 +51,12 @@ the three points must be posisitioned such that the centroid of the triangle is 
 Vec2 centroid(Triangle);
 Triangle t_centroid(Triangle);
 
+typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
-                 std::vector<Triangle> t; /* tile for processing. */ } World;
+                 std::vector<Entity> e; /* tile for processing. */ } World;
 
+typedef std::function<Projectile(World *, Triangle, Projectile)> CollisionF;
+
+struct Entity { std::vector<Triangle> t; CollisionF cf; };
+Entity entity(std::vector<Triangle>, CollisionF);
 #endif

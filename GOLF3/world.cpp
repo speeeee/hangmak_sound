@@ -37,4 +37,4 @@ float angle(Vec3 a, Vec3 b) { float la = len(a); float lb = len(b);
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
-
+Entity entity(std::vector<Triangle> t, CollisionF cf) { return (Entity) { t, cf }; }

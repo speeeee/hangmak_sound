@@ -17,7 +17,8 @@ void d_tri(Triangle a) { glPushMatrix(); Vec3 c = cross(a.norm,v3(0,1,0));
   glTranslatef(a.pos.x,a.pos.y,a.pos.z);
   glRotatef(180/M_PI*angle(a.norm,v3(0,1,0)),-c.x,-c.y,-c.z);
   glBegin(GL_TRIANGLES); d_v2(a.a); d_v2(a.b); d_v2(a.c); glEnd(); glPopMatrix(); }
-void d_tris(World *w) { for(int i=0;i<w->t.size();i++) { d_tri(w->t[i]); } }
+void d_tris(World *w) { for(int i=0;i<w->e.size();i++) {
+  for(int j=0;j<w->e[i].t.size();j++) { d_tri(w->e[i].t[j]); } } }
 void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
   glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
@@ -41,6 +42,8 @@ void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE)
 //     : this will be the first pass of collision detection.
 // DONE: fix apparent error with collision with second triangle in test.
 
+// NEXT: triangulate 3D functions or bezier curves?
+
 int main() {
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, sf::ContextSettings(32));
   window.setVerticalSyncEnabled(true); gl_init(&window);
@@ -48,9 +51,10 @@ int main() {
   //Triangle a = triangle(v2(0,0),v2(0,1),v2(1,0),v3(0.5,0.5,0));
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,1,0),0.05);
-  w->t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
-  w->t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));
+  w->e.push_back(entity(std::vector<Triangle>(),rigid_elastic));
+  w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
+  w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
-    paint(w); Projectile pp = next_state(w->p); test_collide(w,pp,rigid_elastic);
+    paint(w); Projectile pp = next_state(w->p); entity_collide(w,pp); //test_collide(w,pp,rigid_elastic);
     window.display(); } return 0; }

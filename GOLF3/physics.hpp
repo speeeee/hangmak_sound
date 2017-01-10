@@ -10,6 +10,6 @@
 Projectile next_state(Projectile);
 
 // if pl_side is true, add normal vector scaled to current.
-typedef std::function<Projectile(World *, Triangle, Projectile)> CollisionF;
 void test_collide(World *, Projectile, CollisionF);
+void entity_collide(World *, Projectile);
 Projectile rigid_elastic(World *, Triangle, Projectile);
