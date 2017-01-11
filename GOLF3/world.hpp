@@ -57,6 +57,7 @@ typedef struct { Projectile p; // main 'ball' that is controlled.
 
 typedef std::function<Projectile(World *, Triangle, Projectile)> CollisionF;
 
-struct Entity { std::vector<Triangle> t; CollisionF cf; };
-Entity entity(std::vector<Triangle>, CollisionF);
+struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> pts;
+                CollisionF cf; int shader_id; };
+Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, CollisionF, int);
 #endif
