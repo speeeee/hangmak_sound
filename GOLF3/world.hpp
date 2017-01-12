@@ -4,6 +4,8 @@
 #include <vector>
 #include <memory>
 
+#include <SFML/OpenGL.hpp>
+
 #define GRAVITY (-0.0005)
 #define DEGRADE (0.6)
 
@@ -34,6 +36,8 @@ Vec3 vsmul(float, Vec3);
 // negate components of vector
 Vec3 vneg(Vec3);
 
+float dist(Vec2, Vec2);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; float rad; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3, float);
 
@@ -56,8 +60,9 @@ typedef struct { Projectile p; // main 'ball' that is controlled.
                  std::vector<Entity> e; /* tile for processing. */ } World;
 
 typedef std::function<Projectile(World *, Triangle, Projectile)> CollisionF;
+typedef std::function<int(Vec2)> BoundsF;
 
-struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> pts;
-                CollisionF cf; int shader_id; };
-Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, CollisionF, int);
+struct Entity { Vec3 pos; std::vector<Triangle> t; GLuint vpts;
+                BoundsF bf; CollisionF cf; int shader_id; };
+Entity entity(Vec3, std::vector<Triangle>, GLuint, BoundsF, CollisionF, int);
 #endif

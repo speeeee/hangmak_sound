@@ -21,6 +21,8 @@ Vec3 vsmul(float a, Vec3 b) { return v3(a*b.x,a*b.y,a*b.z); }
 
 Vec3 vneg(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 
+float dist(Vec2 a, Vec2 b) { return sqrt(pow(b.x-a.x,2.)+pow(b.z-a.z,2.)); }
+
 Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos, float rad) {
   return (Projectile) { acc, vel, pos, rad }; }
 
@@ -37,5 +39,6 @@ float angle(Vec3 a, Vec3 b) { float la = len(a); float lb = len(b);
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
-Entity entity(Vec3 pos, std::vector<Triangle> t, std::vector<float> pts, CollisionF cf, int shader_id) {
-  return (Entity) { pos, t, pts, cf, shader_id }; }
+Entity entity(Vec3 pos, std::vector<Triangle> t, GLuint vpts, BoundsF bf
+             ,CollisionF cf, int shader_id) {
+  return (Entity) { pos, t, vpts, bf, cf, shader_id }; }
