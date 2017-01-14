@@ -31,70 +31,40 @@ void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
 
-#define EX_STEP (0.01)
-#define EX_NSTEPS (100)
+#define EX_STEP (0.1)
+#define EX_NSTEPS (10)
 typedef std::function<float(float, float)> FuncXZ;
-float ex_fun(float x, float z) { sin(x)+sin(z); }
+float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
 int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
 
-// very rushed code, TODO format.
-std::vector<Triangle> triangulate(FuncXZ f, float step, int nsteps) {
-  std::vector<Triangle> ret; int tns = 2*nsteps;
-  for(int i=0;i<tns;i++) { Triangle a; Triangle b;
-    Vec3 va = v3(0,0,f((i%nsteps)*step,(i/nsteps)*step));
-    Vec3 vb = v3(step,0,f((i%nsteps)*step+step,(i/nsteps)*step));
-    Vec3 vc = v3(0,step,f((i%nsteps)*step,(i/nsteps)*step+step));
-    Vec3 vd = v3(step,step,f((i%nsteps)*step+step,(i/nsteps)*step+step));
-
-    a.norm = unit(cross(vb,vc)); b.norm = unit(cross(v3(0,vb.y,step),v3(step,vc.y,0)));
-    // note: the position is not needed in the centroid calculation, so there is no dependency lock.
-    Vec2 nposa = vsub2(v2((i%nsteps)*step,(i/nsteps)*step),centroid(a));
-    Vec2 nposb = vsub2(v2((i%nsteps)*step+step,(i/nsteps)*step+step),centroid(a));
-    a.pos = v3(nposa.x,0,nposa.z); b.pos = v3(nposb.x,0,nposb.z);
-
-    ret.push_back(a); ret.push_back(b); } return ret; }
-
-//void entity_debug(Vec3 pos, 
+std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
+  // every step has two points for drawing, both on the same z-coordinate.
+  // six total floats for each step.
+  std::vector<float> ret((tsz = nsteps*nsteps)*6);
+  for(int i=0;i<nsteps;i++) {
+    for(int j=0;j<nsteps*6;j+=6) { /* ||||| */ int ind = j+i*nsteps*6;
+      ret[ind] = j/6*step; ret[ind+1] = f(j/6*step,i*step); ret[ind+2] = i*step;
+      ret[ind+3] = j/6*step; ret[ind+4] = f(j/6*step,i*step+step); ret[ind+5] = i*step+step;
+      /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
+                                          ,ret[ind+5]);*/ } }
+  return ret; }
 
 // vector of buffers for bounds of entities.  deleted at end of program run.
 std::vector<GLuint> bufs;
 
-Entity read_entity(const char *e, CollisionF cf) {
-  FILE *f = fopen(e,"rb"); Vec3 pos;
-  // a little rough here, but will clean up later.
-  fread(&pos.x,sizeof(float),1,f);
-  fread(&pos.y,sizeof(float),1,f);
-  fread(&pos.z,sizeof(float),1,f);
-  int amt; fread(&amt,sizeof(int),1,f);
-  float *pts = new float[amt*3];
-  for(int i=0;i<amt;i+=3) { float x; float z;
-    fread(&x,sizeof(float),1,f);
-    fread(&z,sizeof(float),1,f); pts[i] = x; pts[i+1] = 0; pts[i+2] = z; }
-  fclose(f);
-  // bind buffer data.
-  GLuint vao; GLuint vpts;
-  glBindVertexArray(vao); glGenBuffers(1,&vpts);
-    glBindBuffer(GL_ARRAY_BUFFER, vpts);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(pts), pts, GL_STATIC_DRAW);
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(GLfloat), (GLvoid *)0);
-    bufs.push_back(vpts);
-  glBindVertexArray(0);
-  return entity(pos,triangulate(ex_fun,EX_STEP,EX_NSTEPS),vao,ex_bounds,cf,curr_id++);
-  /* modifies current ID. */ }
-
 Entity sample_entity(CollisionF cf) {
   float ie[9] = { 0., 0., 0.,  0.5, 0., 0.,  0.5, 0., 0.5 };
   float *pts = new float[9]; memcpy(pts,ie,9*sizeof(float)); // not ideal solution, rushed.
-  GLuint vao; GLuint vpts;
+  /*GLuint vao; GLuint vpts;
   glGenVertexArrays(1,&vao); glGenBuffers(1,&vpts);
   glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vpts);
     glBufferData(GL_ARRAY_BUFFER, sizeof(pts), pts, GL_STATIC_DRAW);
     glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(GLfloat),(GLvoid *)0);
     //glEnableVertexAttribArray(0);
-  glBindVertexArray(0); bufs.push_back(vpts);
-  return entity(v3(0,0,0),triangulate(ex_fun,EX_STEP,EX_NSTEPS),vao,ex_bounds_2,cf,0); }
+  glBindVertexArray(0); bufs.push_back(vpts);*/
+  return entity(v3(0,0,0),std::vector<Triangle>(),triangulate(ex_fun,EX_STEP,EX_NSTEPS),ex_bounds_2,cf,0); }
 
 const GLchar *default_vs = //"#version 130 core\n"
   "void main() { gl_FrontColor = gl_Color;\n"
@@ -106,7 +76,7 @@ const GLchar *sample_vs =
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
   "void main() { vec4 v = vec4(gl_Vertex);\n"
   "  vec4 nv = vec4(v.x,samp_func(v.xz),v.z,v.w);\n"
-  "  gl_Position = gl_ModelViewProjectionMatrix*nv; }\0";
+  "  gl_Position = gl_ModelViewProjectionMatrix*v; }\0";
 const GLchar *sample_fs =
   "void main() { gl_FragColor = vec4(1.,0.,0.,1.); }\0";
 
@@ -147,7 +117,9 @@ void paint(World *w,GLuint default_program) {
   //glBindVertexArray(w->e[0].vpts); glDrawArrays(GL_TRIANGLES,0,3);
   //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
-  glBegin(GL_TRIANGLES); glVertex3f(0,0,0); glVertex3f(1,0,0); glVertex3f(0,0,1); glEnd();
+  glTranslatef(-0.5,0.,-0.5);
+  for(int i=0;i<EX_NSTEPS;i++) { glBegin(GL_TRIANGLE_STRIP); for(int j=0;j<EX_NSTEPS*2;j++) {
+    glVertex3fv(&w->e[0].vpts[j*3+i*EX_NSTEPS*6]); } glEnd(); }
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -159,18 +131,20 @@ void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE)
 
 // DONE: map through all triangles instead of just first.
 // TODO: change projectile graphic with circle.
-// TODO: increase render performance keeping track of cross vector rather than calculating it
-//     : each time.
 // TODO: increase performace of logic by having a bounding rectangle that encases each triangle.
 //     : this will be the first pass of collision detection.
-// DONE: fix apparent error with collision with second triangle in test.
 
 // TODO: make possible modification of the degradation (friction) coefficient for each
 //     : entity.
 // TODO: make possible to test for which side the ball falls for a polyhedron.
-// TODO: make polygon composable of connected functions.  allow its triangularization to an
-//     : arbitrary degree and use a 3D function within the polygon's bounds to displace each vertex
-//     : corresponding to its xz position using the vertex shader.
+
+// TODO: turn triangulation function into actual triangles for collision.
+//     : \|\|\|\|\|...
+//       \|\|\|\|\|...
+/*       .
+         .
+         .
+*/
 
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
@@ -190,4 +164,4 @@ int main() { sf::ContextSettings settings;
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w,default_program); Projectile pp = next_state(w->p); entity_collide(w,pp);
-    window.display(); } glDeleteVertexArrays(1,&w->e[0].vpts); glDeleteBuffers(1,&bufs[0]); return 0; }
+    window.display(); } return 0; }
