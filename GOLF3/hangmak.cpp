@@ -27,6 +27,10 @@ void d_tris(World *w) { for(int i=0;i<w->e.size();i++) {
 void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
   glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
+void d_triangulation(std::vector<float> vpts, int nsteps) {
+  // recall that for every step, there are 2 points drawn.
+  for(int i=0;i<nsteps;i++) { glBegin(GL_TRIANGLE_STRIP); for(int j=0;j<nsteps*2;j++) {
+    glVertex3fv(&vpts[j*3+i*nsteps*6]); } glEnd(); } }
 
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
@@ -118,8 +122,7 @@ void paint(World *w,GLuint default_program) {
   //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
   glTranslatef(-0.5,0.,-0.5);
-  for(int i=0;i<EX_NSTEPS;i++) { glBegin(GL_TRIANGLE_STRIP); for(int j=0;j<EX_NSTEPS*2;j++) {
-    glVertex3fv(&w->e[0].vpts[j*3+i*EX_NSTEPS*6]); } glEnd(); }
+  d_triangulation(w->e[0].vpts,EX_NSTEPS);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
