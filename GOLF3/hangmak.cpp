@@ -180,7 +180,7 @@ int main() { sf::ContextSettings settings;
   glewInit();
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.01,1,0.01),0.05);
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
