@@ -65,8 +65,8 @@ std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
     // call t_centroid before push.
     Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+3*2]);
     Vec3 tr = arr_to_vec(&arr[i+3*3]); Vec3 tl = arr_to_vec(&arr[i+3*1]);
-    a.norm = cross(vsub3(tl,bl),vsub3(tr,bl));
-    b.norm = vneg(cross(vsub3(tl,tr),vsub3(br,tr)));
+    a.norm = unit(cross(vsub3(tl,bl),vsub3(tr,bl)));
+    b.norm = unit(vneg(cross(vsub3(tl,tr),vsub3(br,tr))));
     a.pos = bl; b.pos = tr;
     // expects leg on x-axis first, and then leg on z-axis.
     ret.push_back(a);
@@ -144,8 +144,8 @@ void paint(World *w,GLuint default_program) {
   //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
   glTranslatef(-0.5,0.,-0.5);
-  d_tris(w);
-  //d_triangulation(w->e[0].vpts,EX_NSTEPS);
+  //d_tris(w);
+  d_triangulation(w->e[0].vpts,EX_NSTEPS);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -180,7 +180,7 @@ int main() { sf::ContextSettings settings;
   glewInit();
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.06,1,0.06),0.05);
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.01,1,0.01),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
