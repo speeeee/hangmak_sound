@@ -47,6 +47,6 @@ float angle(Vec3 a, Vec3 b) { float la = len(a); float lb = len(b);
 Vec3 cross(Vec3 a, Vec3 b) {
   return (Vec3) { a.y*b.z-a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x }; }
 
-Entity entity(Vec3 pos, std::vector<Triangle> t, std::vector<float> vpts, BoundsF bf
+Entity entity(Vec3 pos, std::vector<Triangle> t, std::vector<float> vpts, GLuint vao, BoundsF bf
              ,CollisionF cf, GLuint shader_id) {
-  return (Entity) { pos, t, vpts, bf, cf, shader_id }; }
+  return (Entity) { pos, t, vpts, vao, bf, cf, shader_id }; }
