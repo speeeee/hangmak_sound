@@ -23,16 +23,24 @@ Vec3 vneg(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 
 float dist(Vec2 a, Vec2 b) { return sqrt(pow(b.x-a.x,2.)+pow(b.z-a.z,2.)); }
 
+Vec3 arr_to_vec(float *t) { return v3(t[0],t[1],t[2]); }
+
 Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos, float rad) {
   return (Projectile) { acc, vel, pos, rad }; }
 
 Triangle t_centroid(Triangle a) { Vec2 c = centroid(a);
   return triangle(a.pos,vsub2(a.a,c),vsub2(a.b,c),vsub2(a.c,c),a.norm); }
+Triangle center_right(Triangle a, Vec3 orig, Vec3 xv, Vec3 yv) {
+  //Vec3 xt = vsub3(xv,orig); Vec3 yt = vsub3(yv,orig);
+  Vec2 cent = centroid(a);
+  a.pos = v3(orig.x+cent.x,len2(cent)*dot(unit(a.norm),v3(1,0,0)),orig.z+cent.z);
+  return a; }
 
 Vec3 unit(Vec3 a) { float u = pow(pow(a.x,2)+pow(a.y,2)+pow(a.z,2),0.5);
   return (Vec3) { a.x/u, a.y/u, a.z/u }; }
 float dot(Vec3 a, Vec3 b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
 float len(Vec3 a) { return pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
+float len2(Vec2 a) { return pow(pow(a.x,2.)+pow(a.z,2.),0.5); }
 float angle(Vec3 a, Vec3 b) { float la = len(a); float lb = len(b);
   return acos(dot(a,b)/(la*lb)); }
 

@@ -42,6 +42,10 @@ float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
 int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
 
+/* 2 4 6...
+   |\|\|...
+   1 3 5...
+*/
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
   // every step has two points for drawing, both on the same z-coordinate.
   // six total floats for each step.
@@ -53,6 +57,23 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
       /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
                                           ,ret[ind+5]);*/ } }
   return ret; }
+std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
+  std::vector<Triangle> ret;
+  for(int i=0;i<arr.size();i+=3*2) { Triangle a, b;
+    a.a = v2(0,0); a.b = v2(0,step); a.c = v2(step,0);
+    b.a = v2(step,step); b.b = v2(step,0); b.c = v2(0,step);
+    // call t_centroid before push.
+    Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+3*2]);
+    Vec3 tr = arr_to_vec(&arr[i+3*3]); Vec3 tl = arr_to_vec(&arr[i+3*1]);
+    a.norm = cross(vsub3(tl,bl),vsub3(tr,bl));
+    b.norm = vneg(cross(vsub3(tl,tr),vsub3(br,tr)));
+    a.pos = bl; b.pos = tr;
+    // expects leg on x-axis first, and then leg on z-axis.
+    ret.push_back(a);
+    ret.push_back(b); }
+  for(int i=0;i<ret.size();i++) {
+    printf("%i: <%g, %g, %g> <%g, %g, %g>\n",i,ret[i].pos.x,ret[i].pos.y,ret[i].pos.z
+          ,ret[i].norm.x,ret[i].norm.y,ret[i].norm.z); } return ret; }
 
 // vector of buffers for bounds of entities.  deleted at end of program run.
 std::vector<GLuint> bufs;
@@ -68,7 +89,8 @@ Entity sample_entity(CollisionF cf) {
     glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(GLfloat),(GLvoid *)0);
     //glEnableVertexAttribArray(0);
   glBindVertexArray(0); bufs.push_back(vpts);*/
-  return entity(v3(0,0,0),std::vector<Triangle>(),triangulate(ex_fun,EX_STEP,EX_NSTEPS),ex_bounds_2,cf,0); }
+  std::vector<float> tris = triangulate(ex_fun,EX_STEP,EX_NSTEPS);
+  return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS),ex_bounds_2,cf,0); }
 
 const GLchar *default_vs = //"#version 130 core\n"
   "void main() { gl_FrontColor = gl_Color;\n"
@@ -122,7 +144,8 @@ void paint(World *w,GLuint default_program) {
   //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
   glTranslatef(-0.5,0.,-0.5);
-  d_triangulation(w->e[0].vpts,EX_NSTEPS);
+  d_tris(w);
+  //d_triangulation(w->e[0].vpts,EX_NSTEPS);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -157,7 +180,7 @@ int main() { sf::ContextSettings settings;
   glewInit();
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,1,0),0.05);
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.06,1,0.06),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
@@ -166,5 +189,6 @@ int main() { sf::ContextSettings settings;
   GLuint default_program = create_program(default_vs,default_fs);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
-    paint(w,default_program); Projectile pp = next_state(w->p); entity_collide(w,pp);
+    paint(w,default_program); Projectile pp = next_state(w->p);
+    /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
     window.display(); } return 0; }

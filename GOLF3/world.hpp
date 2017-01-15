@@ -19,6 +19,7 @@ float angle(Vec3 a, Vec3 b);
 
 typedef struct { float x; float z; } Vec2;
 Vec2 v2(float,float);
+float len2(Vec2);
 
 Vec2 vsub2(Vec2, Vec2);
 Vec3 vsub3(Vec3, Vec3);
@@ -38,6 +39,9 @@ Vec3 vneg(Vec3);
 
 float dist(Vec2, Vec2);
 
+// convert first three contents of array/vector and returns a 3D-vector
+Vec3 arr_to_vec(float *);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; float rad; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3, float);
 
@@ -54,6 +58,10 @@ the three points must be posisitioned such that the centroid of the triangle is 
 */
 Vec2 centroid(Triangle);
 Triangle t_centroid(Triangle);
+// center differes from t_centroid in that the position itself is also changed.
+//   specific for right triangles with two legs perpendicular to x- and z-axes.
+//   also expects a position vector for the intersect of the two legs.
+Triangle center_right(Triangle, Vec3, Vec3, Vec3);
 
 typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
