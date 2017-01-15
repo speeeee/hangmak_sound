@@ -27,10 +27,16 @@ void d_tris(World *w) { for(int i=0;i<w->e.size();i++) {
 void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
   glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
-void d_triangulation(std::vector<float> vpts, int nsteps) {
+// TODO: switch triangulation to retained mode with VAO.
+/*void d_triangulation(std::vector<float> vpts, int nsteps) {
+  // in immediate mode right now, but will switch to drawing from a VAO.
   // recall that for every step, there are 2 points drawn.
   for(int i=0;i<nsteps;i++) { glBegin(GL_TRIANGLE_STRIP); for(int j=0;j<nsteps*2;j++) {
-    glVertex3fv(&vpts[j*3+i*nsteps*6]); } glEnd(); } }
+    glVertex3fv(&vpts[j*3+i*nsteps*6]); } glEnd(); } }*/
+void d_triangulation(GLuint vao, int nsteps) {
+  // assume total steps to be the square of nsteps.
+  glBindVertexArray(vao);
+  for(int i=0;i<nsteps;i++) { glDrawArrays(GL_TRIANGLE_STRIP,i*nsteps*2,nsteps*2); } }
 
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
@@ -47,7 +53,7 @@ int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
    1 3 5...
 */
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
-  // every step has two points for drawing, both on the same z-coordinate.
+  // every step has two points for drawing, both on the same x-coordinate.
   // six total floats for each step.
   std::vector<float> ret((tsz = nsteps*nsteps)*6);
   for(int i=0;i<nsteps;i++) {
@@ -71,26 +77,26 @@ std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
     // expects leg on x-axis first, and then leg on z-axis.
     ret.push_back(a);
     ret.push_back(b); }
-  for(int i=0;i<ret.size();i++) {
+  /*for(int i=0;i<ret.size();i++) {
     printf("%i: <%g, %g, %g> <%g, %g, %g>\n",i,ret[i].pos.x,ret[i].pos.y,ret[i].pos.z
-          ,ret[i].norm.x,ret[i].norm.y,ret[i].norm.z); } return ret; }
+          ,ret[i].norm.x,ret[i].norm.y,ret[i].norm.z); }*/ return ret; }
 
 // vector of buffers for bounds of entities.  deleted at end of program run.
 std::vector<GLuint> bufs;
 
 Entity sample_entity(CollisionF cf) {
-  float ie[9] = { 0., 0., 0.,  0.5, 0., 0.,  0.5, 0., 0.5 };
-  float *pts = new float[9]; memcpy(pts,ie,9*sizeof(float)); // not ideal solution, rushed.
-  /*GLuint vao; GLuint vpts;
-  glGenVertexArrays(1,&vao); glGenBuffers(1,&vpts);
-  glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vpts);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(pts), pts, GL_STATIC_DRAW);
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(GLfloat),(GLvoid *)0);
-    //glEnableVertexAttribArray(0);
-  glBindVertexArray(0); bufs.push_back(vpts);*/
   std::vector<float> tris = triangulate(ex_fun,EX_STEP,EX_NSTEPS);
-  return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS),ex_bounds_2,cf,0); }
+
+  GLuint vao; glGenVertexArrays(1,&vao);
+  glBindVertexArray(vao);
+  GLuint buf; glGenBuffers(1,&buf);
+  glBindBuffer(GL_ARRAY_BUFFER, buf);
+  glBufferData(GL_ARRAY_BUFFER,tris.size()*sizeof(float),&tris[0],GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0);
+
+  return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS)
+               ,vao,ex_bounds_2,cf,0); }
 
 const GLchar *default_vs = //"#version 130 core\n"
   "void main() { gl_FrontColor = gl_Color;\n"
@@ -98,12 +104,15 @@ const GLchar *default_vs = //"#version 130 core\n"
 const GLchar *default_fs = //"#version 130 core\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.,1.); }\0";
 
-const GLchar *sample_vs =
+// TODO: add uniform for position.
+// NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
+const GLchar *sample_vs = "#version 130\n"
+  "in vec3 position;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
-  "void main() { vec4 v = vec4(gl_Vertex);\n"
-  "  vec4 nv = vec4(v.x,samp_func(v.xz),v.z,v.w);\n"
-  "  gl_Position = gl_ModelViewProjectionMatrix*v; }\0";
-const GLchar *sample_fs =
+  "void main() {\n"
+  "  gl_Position = vec4(position.xyz,1.0); }\0";
+const GLchar *sample_fs = "#version 130\n"
+  "uniform vec2 i_res;\n"
   "void main() { gl_FragColor = vec4(1.,0.,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
@@ -145,7 +154,7 @@ void paint(World *w,GLuint default_program) {
   glUseProgram(w->e[0].shader_id);
   glTranslatef(-0.5,0.,-0.5);
   //d_tris(w);
-  d_triangulation(w->e[0].vpts,EX_NSTEPS);
+  d_triangulation(w->e[0].vao,EX_NSTEPS); //switch 'vao' to 'vpts' for expected render.
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -186,9 +195,14 @@ int main() { sf::ContextSettings settings;
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
   w->e.push_back(sample_entity(rigid_elastic));
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
+
+  glBindAttribLocation(w->e[0].shader_id,0,"position");
+  GLint i_res = glGetUniformLocation(w->e[0].shader_id,"i_res");
+  glUniform2i(i_res,window.getSize().x,window.getSize().y);
+
   GLuint default_program = create_program(default_vs,default_fs);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w,default_program); Projectile pp = next_state(w->p);
     /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
-    window.display(); } return 0; }
+    window.display(); } glDeleteVertexArrays(1,&w->e[0].vao); return 0; }
