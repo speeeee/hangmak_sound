@@ -10,6 +10,7 @@
 #include "world.hpp"
 #include "bounds.hpp"
 #include "physics.hpp"
+#include "matrix.hpp"
 
 #define PI 3.14159265358979
 
