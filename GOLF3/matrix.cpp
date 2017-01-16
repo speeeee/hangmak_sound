@@ -1,4 +1,5 @@
 #include "matrix.hpp"
+#include <cmath>
 
 Matrix matrix(std::vector<float> dat, int r, int c) { return (Matrix) { dat, r, c }; }
 // 0x0 identity matrix represents error.
@@ -21,10 +22,10 @@ Matrix mmul(Matrix a, Matrix b) { if(a.c!=b.r) { return id_mat(0); }
 Matrix frustum_pers(float left, float right, float bottom, float top, float near, float far) {
   Matrix ret; ret.r = ret.c = 4;
   std::vector<float> dat =
-    { 2.*near/(right-left), 0                   , (right+left)/(right-left), 0
-    , 0                   , 2.*near/(top-bottom), (top+bottom)/(top-bottom), 0
-    , 0                   , 0                   , -(far+near)/(far-near)   , -2.*far*near/(far-near)
-    , 0                   , 0                   , -1                       , 0 };
+    { (float)2.*near/(right-left), 0, (right+left)/(right-left), 0
+    , 0, (float)(2.*near/(top-bottom)), (top+bottom)/(top-bottom), 0
+    , 0, 0, (float)(-(far+near)/(far-near))   , (float)-2.*far*near/(far-near)
+    , 0, 0, -1, 0 };
   ret.dat = dat; return ret; }
 
 Matrix translate(Matrix a, Vec3 t) {
@@ -38,10 +39,10 @@ Matrix translate(Matrix a, Vec3 t) {
 Matrix rotate(Matrix a, float rad, Vec3 tt) {
   float c = cos(rad); float s = sin(rad); Vec3 t = unit(tt);
   std::vector<float> dat =
-    { pow(t.x,2.)*(1-c)+c, t.x*t.y*(1-c)-t.z*s, t.x*t.z*(1-c)+t.y*s, 0
-    , t.y*t.x*(1-c)+t.z*s, pow(t.y,2.)*(1-c)+c, t.y*t.z*(1-c)-t.x*s, 0
-    , t.x*t.z*(1-c)-t.y*s, t.y*t.z*(1-c)+t.x*s, pow(t.z,2.)*(1-c)+c, 0
-    , 0                  , 0                  , 0                  , 1 };
+    { powf(t.x,2.)*(1-c)+c, t.x*t.y*(1-c)-t.z*s , t.x*t.z*(1-c)+t.y*s , 0
+    , t.y*t.x*(1-c)+t.z*s , powf(t.y,2.)*(1-c)+c, t.y*t.z*(1-c)-t.x*s , 0
+    , t.x*t.z*(1-c)-t.y*s , t.y*t.z*(1-c)+t.x*s , powf(t.z,2.)*(1-c)+c, 0
+    , 0                   , 0                   , 0                   , 1 };
   return mmul(matrix(dat,4,4),a); }
 
 Matrix transpose(Matrix a) { std::vector<float> dat(a.r*a.c,0.);
