@@ -93,25 +93,27 @@ Entity sample_entity(CollisionF cf) {
   GLuint buf; glGenBuffers(1,&buf);
   glBindBuffer(GL_ARRAY_BUFFER, buf);
   glBufferData(GL_ARRAY_BUFFER,tris.size()*sizeof(float),&tris[0],GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(0); // TODO: scale this with arrays.
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0);
 
   return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS)
                ,vao,ex_bounds_2,cf,0); }
 
-const GLchar *default_vs = //"#version 130 core\n"
+const GLchar *default_vs = "#version 130\n"
+  "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
   "void main() { gl_FrontColor = gl_Color;\n"
-  "gl_Position = gl_ModelViewProjectionMatrix*gl_Vertex; }\0";
-const GLchar *default_fs = //"#version 130 core\n"
+  "gl_Position = projection*view*model*gl_Vertex; }\0";
+const GLchar *default_fs = "#version 130\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.,1.); }\0";
 
 // TODO: add uniform for position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
 const GLchar *sample_vs = "#version 130\n"
   "in vec3 position;\n"
+  "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
   "void main() {\n"
-  "  gl_Position = vec4(position.xyz,1.0); }\0";
+  "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
 const GLchar *sample_fs = "#version 130\n"
   "uniform vec2 i_res;\n"
   "void main() { gl_FragColor = vec4(1.,0.,0.,1.); }\0";
@@ -148,22 +150,24 @@ GLfloat ie[9] = { 0., 0., 0.,  0.5, 0., 0.,  0.5, 0., 0.5 };
 
 void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glRotatef(30,-1,0,0);
+  //glRotatef(30,-1,0,0);
   //glColor3f(1,0,0); //d_tris(w);
   //glBindVertexArray(w->e[0].vpts); glDrawArrays(GL_TRIANGLES,0,3);
   //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
-  glTranslatef(-0.5,0.,-0.5);
+  //glTranslatef(-0.5,0.,-0.5);
   //d_tris(w);
   d_triangulation(w->e[0].vao,EX_NSTEPS); //switch 'vao' to 'vpts' for expected render.
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
-void gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
+Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
+  glDepthFunc(GL_LESS);
   glDisable(GL_LIGHTING); /* temporary */ glViewport(0,0,window->getSize().x,window->getSize().y);
-  glMatrixMode(GL_PROJECTION); glLoadIdentity();
+  //glMatrixMode(GL_PROJECTION); glLoadIdentity();
   float ratio = window->getSize().x/window->getSize().y;
-  glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f); }
+  //glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f);
+  return frustum_pers(-ratio,ratio,-1.f,1.f,1.f,500.f); }
 
 // DONE: map through all triangles instead of just first.
 // TODO: change projectile graphic with circle.
@@ -186,8 +190,19 @@ int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
   settings.majorVersion = 3; settings.minorVersion = 0;
   sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, settings);
-  window.setVerticalSyncEnabled(true); gl_init(&window);
+  window.setVerticalSyncEnabled(true); Matrix projection = gl_init(&window);
+  glewExperimental = GL_TRUE;
   glewInit();
+
+  Matrix model = translate(id_mat(4),v3(-0.5,0,-0.5));
+  Matrix view = translate(id_mat(4),v3(0,0,-1));
+  //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
+
+  /*print_matrix(model);
+
+  Matrix gl_proj = matrix(std::vector<float>(16),4,4);
+  glGetFloatv(GL_MODELVIEW_MATRIX, &gl_proj.dat[0]);
+  print_matrix(gl_proj);*/
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
@@ -195,13 +210,35 @@ int main() { sf::ContextSettings settings;
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
   w->e.push_back(sample_entity(rigid_elastic));
+  // TODO: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
+  glUseProgram(w->e[0].shader_id);
 
   glBindAttribLocation(w->e[0].shader_id,0,"position");
   GLint i_res = glGetUniformLocation(w->e[0].shader_id,"i_res");
   glUniform2i(i_res,window.getSize().x,window.getSize().y);
 
+  GLint _model = glGetUniformLocation(w->e[0].shader_id,"model");
+  glUniformMatrix4fv(_model,1,GL_TRUE,&model.dat[0]);
+  GLint _view = glGetUniformLocation(w->e[0].shader_id,"view");
+  glUniformMatrix4fv(_view,1,GL_TRUE,&view.dat[0]);
+  GLint _projection = glGetUniformLocation(w->e[0].shader_id,"projection");
+  glUniformMatrix4fv(_projection,1,GL_TRUE,&projection.dat[0]);
+
+  std::vector<float> a(16);
+  glGetUniformfv(w->e[0].shader_id,_view,&a[0]);
+  print_matrix(matrix(a,4,4));
+
   GLuint default_program = create_program(default_vs,default_fs);
+  glUseProgram(default_program);
+
+  GLint _dmodel = glGetUniformLocation(default_program,"model");
+  GLint _dview = glGetUniformLocation(default_program,"view");
+  GLint _dprojection = glGetUniformLocation(default_program,"projection");
+  glUniformMatrix4fv(_dmodel,1,GL_TRUE,&model.dat[0]);
+  glUniformMatrix4fv(_dview,1,GL_TRUE,&view.dat[0]);
+  glUniformMatrix4fv(_dprojection,1,GL_TRUE,&projection.dat[0]);
+
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w,default_program); Projectile pp = next_state(w->p);
