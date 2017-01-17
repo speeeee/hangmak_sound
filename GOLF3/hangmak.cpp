@@ -94,7 +94,8 @@ Entity sample_entity(CollisionF cf) {
   glBindBuffer(GL_ARRAY_BUFFER, buf);
   glBufferData(GL_ARRAY_BUFFER,tris.size()*sizeof(float),&tris[0],GL_STATIC_DRAW);
   glEnableVertexAttribArray(0); // TODO: scale this with arrays.
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
+                                                    //   glBindAttribLocation(..).
 
   return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS)
                ,vao,ex_bounds_2,cf,0); }
@@ -145,19 +146,29 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   glBindAttribLocation(prog,0,"position"); glLinkProgram(prog);
   glDeleteShader(vs); glDeleteShader(fs); return prog; }
 
-GLfloat ie[9] = { 0., 0., 0.,  0.5, 0., 0.,  0.5, 0., 0.5 };
+// expects model, view, and projection matrices to be named 'model', 'view', and 'projection'
+//   in the shader.
+// WARNING: current shader is still bound to 'prog' after call.
+void mvp_init(GLuint prog, Matrix model, Matrix view, Matrix projection) {
+  glUseProgram(prog);
+
+  glBindAttribLocation(prog,0,"position");
+
+  GLint _model = glGetUniformLocation(prog,"model");
+  glUniformMatrix4fv(_model,1,GL_TRUE,&model.dat[0]);
+  GLint _view = glGetUniformLocation(prog,"view");
+  glUniformMatrix4fv(_view,1,GL_TRUE,&view.dat[0]);
+  GLint _projection = glGetUniformLocation(prog,"projection");
+  glUniformMatrix4fv(_projection,1,GL_TRUE,&projection.dat[0]); }
+  
+
 /* =============================================================== */
 
 void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //glRotatef(30,-1,0,0);
-  //glColor3f(1,0,0); //d_tris(w);
-  //glBindVertexArray(w->e[0].vpts); glDrawArrays(GL_TRIANGLES,0,3);
-  //glBindVertexArray(0);
   glUseProgram(w->e[0].shader_id);
-  //glTranslatef(-0.5,0.,-0.5);
-  //d_tris(w);
-  d_triangulation(w->e[0].vao,EX_NSTEPS); //switch 'vao' to 'vpts' for expected render.
+  d_triangulation(w->e[0].vao,EX_NSTEPS);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -198,47 +209,21 @@ int main() { sf::ContextSettings settings;
   Matrix view = translate(id_mat(4),v3(0,0,-1));
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
-  /*print_matrix(model);
-
-  Matrix gl_proj = matrix(std::vector<float>(16),4,4);
-  glGetFloatv(GL_MODELVIEW_MATRIX, &gl_proj.dat[0]);
-  print_matrix(gl_proj);*/
-
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
   w->e.push_back(sample_entity(rigid_elastic));
-  // TODO: put all of this in new construction function.
+  // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
-  glUseProgram(w->e[0].shader_id);
 
-  glBindAttribLocation(w->e[0].shader_id,0,"position");
+  mvp_init(w->e[0].shader_id,model,view,projection);
   GLint i_res = glGetUniformLocation(w->e[0].shader_id,"i_res");
   glUniform2i(i_res,window.getSize().x,window.getSize().y);
 
-  GLint _model = glGetUniformLocation(w->e[0].shader_id,"model");
-  glUniformMatrix4fv(_model,1,GL_TRUE,&model.dat[0]);
-  GLint _view = glGetUniformLocation(w->e[0].shader_id,"view");
-  glUniformMatrix4fv(_view,1,GL_TRUE,&view.dat[0]);
-  GLint _projection = glGetUniformLocation(w->e[0].shader_id,"projection");
-  glUniformMatrix4fv(_projection,1,GL_TRUE,&projection.dat[0]);
-
-  std::vector<float> a(16);
-  glGetUniformfv(w->e[0].shader_id,_view,&a[0]);
-  print_matrix(matrix(a,4,4));
-
   GLuint default_program = create_program(default_vs,default_fs);
-  glUseProgram(default_program);
-
-  GLint _dmodel = glGetUniformLocation(default_program,"model");
-  GLint _dview = glGetUniformLocation(default_program,"view");
-  GLint _dprojection = glGetUniformLocation(default_program,"projection");
-  glUniformMatrix4fv(_dmodel,1,GL_TRUE,&model.dat[0]);
-  glUniformMatrix4fv(_dview,1,GL_TRUE,&view.dat[0]);
-  glUniformMatrix4fv(_dprojection,1,GL_TRUE,&projection.dat[0]);
-
+  mvp_init(default_program,model,view,projection);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     paint(w,default_program); Projectile pp = next_state(w->p);
