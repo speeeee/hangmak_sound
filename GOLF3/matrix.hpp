@@ -23,3 +23,5 @@ Matrix transpose(Matrix);
 Matrix look_at(Vec3, Vec3, Vec3);
 
 void print_matrix(Matrix);
+
+// TODO: inverse 4x4 matrix.

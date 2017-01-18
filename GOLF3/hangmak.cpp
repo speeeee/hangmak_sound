@@ -107,7 +107,8 @@ const GLchar *default_vs = "#version 130\n"
 const GLchar *default_fs = "#version 130\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.,1.); }\0";
 
-// TODO: add uniform for position.
+// DONE: add uniform for position.
+// TODO: put MVP and inverse-P in fragment shader for computing eye-position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
 const GLchar *sample_vs = "#version 130\n"
   "in vec3 position;\n"
@@ -116,8 +117,9 @@ const GLchar *sample_vs = "#version 130\n"
   "void main() {\n"
   "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
 const GLchar *sample_fs = "#version 130\n"
-  "uniform vec2 i_res;\n"
-  "void main() { gl_FragColor = vec4(1.,0.,0.,1.); }\0";
+  "uniform ivec2 u_res;\n"
+  "void main() { vec2 pos = gl_FragCoord.xy/u_res;\n"
+  "  gl_FragColor = vec4(0.,pos.y,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -189,7 +191,7 @@ Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRU
 //     : entity.
 // TODO: make possible to test for which side the ball falls for a polyhedron.
 
-// TODO: turn triangulation function into actual triangles for collision.
+// DONE: turn triangulation function into actual triangles for collision.
 //     : \|\|\|\|\|...
 //       \|\|\|\|\|...
 /*       .
@@ -219,8 +221,8 @@ int main() { sf::ContextSettings settings;
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
   mvp_init(w->e[0].shader_id,model,view,projection);
-  GLint i_res = glGetUniformLocation(w->e[0].shader_id,"i_res");
-  glUniform2i(i_res,window.getSize().x,window.getSize().y);
+  GLint u_res = glGetUniformLocation(w->e[0].shader_id,"u_res");
+  glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
   GLuint default_program = create_program(default_vs,default_fs);
   mvp_init(default_program,model,view,projection);
