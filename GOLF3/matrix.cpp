@@ -7,6 +7,16 @@ Matrix id_mat(int sz) { Matrix a; a.r = a.c = sz;
   std::vector<float> dat(sz*sz,0.); for(int i=0;i<sz*sz;i+=sz+1) { dat[i] = 1; }
   a.dat = dat; return a; }
 
+Matrix madd(Matrix a, Matrix b) { Matrix ret = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
+  for(int i=0;i<b.r*b.c;i++) { ret.dat[i] = a.dat[i]+b.dat[i]; } return ret; }
+Matrix operator+(Matrix a, Matrix b) { return madd(a,b); }
+Matrix msub(Matrix a, Matrix b) { Matrix ret = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
+  for(int i=0;i<b.r*b.c;i++) { ret.dat[i] = a.dat[i]-b.dat[i]; } return ret; }
+Matrix operator-(Matrix a, Matrix b) { return msub(a,b); }
+Matrix mscalar(float a, Matrix b) { Matrix ret = matrix(std::vector<float>(b.r*b.c),b.r,b.c);
+  for(int i=0;i<b.r*b.c;i++) { ret.dat[i] = a*b.dat[i]; } return ret; }
+Matrix operator+(float a, Matrix b) { return mscalar(a,b); }
+
 float dot_in_mat(float *a, float *b, int len, int col_sep) { float ret = 0;
   for(int i=0;i<len;i++) { ret += a[i]*b[i*col_sep]; } return ret; }
 // assumes AxB * BxC
@@ -69,3 +79,18 @@ Matrix look_at(Vec3 eye, Vec3 t, Vec3 up) {
 void print_matrix(Matrix a) {
   for(int j=0;j<a.r;j++) { printf("| ");
     for(int i=0;i<a.c;i++) { printf("%g ",a.dat[i+j*a.c]); } printf("|\n"); } }
+
+// TODO: make inversion algorithm through Gauss-Jordan elimination.
+//Matrix minvert(Matrix a) { Matrix ta = transpose(a); Matrix id = id_mat(4);
+
+// adapted from Wikipedia example for Crout matrix decomposition.
+void lu_decomp(Matrix ma, Matrix ml, Matrix mu) {
+  float *a = &ma.dat[0]; float *l = &ml.dat[0]; float *u = &mu.dat[0]; int n = ma.r;
+  for(int i=0;i<n;i++) { u[i*n+i] = 1; }
+  for(int j=0;j<n;j++) { for(int i=j;i<n;i++) {
+      float sum = 0; for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
+      l[i*n+j] = a[i*n+j] - sum; }
+    for(int i=j;i<n;i++) { float sum = 0;
+      for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
+      if(l[j*n+j]==0) { ml = id_mat(0); mu = id_mat(0); return; /* dangerous for now */ }
+      u[j*n+i] = (a[j*n+i]-sum)/l[j*n+j]; } } }
