@@ -27,6 +27,7 @@ Matrix mmul(Matrix a, Matrix b) { if(a.c!=b.r) { return id_mat(0); }
     for(int j=0;j<b.c;j++) {
       dat[j+i*b.c] = dot_in_mat(&a.dat[i*a.c],&b.dat[j],a.r,b.c); } }
   ret.dat = dat; return ret; }
+Matrix operator*(Matrix a, Matrix b) { return mmul(a,b); }
 
 //glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f);
 Matrix frustum_pers(float left, float right, float bottom, float top, float near, float far) {
@@ -80,17 +81,51 @@ void print_matrix(Matrix a) {
   for(int j=0;j<a.r;j++) { printf("| ");
     for(int i=0;i<a.c;i++) { printf("%g ",a.dat[i+j*a.c]); } printf("|\n"); } }
 
-// TODO: make inversion algorithm through Gauss-Jordan elimination.
-//Matrix minvert(Matrix a) { Matrix ta = transpose(a); Matrix id = id_mat(4);
+// modifies first argument.
+// expects matrix a and matrix col to have same column size.
+void col_in_4x4(Matrix *a, Matrix col, int cn) {
+  for(int i=0;i<col.r;i++) { a->dat[i*a->c+cn] = col.dat[i]; } }
+
+// WARNING: not very optimized.
+// TODO: make inversion given LUx = I where L and U are lower and upper triangle matrices
+//     : respectively.
+Matrix minvert(Matrix a) { Matrix l = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
+  Matrix u = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
+  lu_decomp(a,&l,&u); Matrix col = matrix(std::vector<float>(a.r,0),a.r,1);
+  Matrix ux = solve_tri(u,col,BACK); // returned matrix Ux is (a.r) x 1
+  print_matrix(ux);
+  Matrix cmul = id_mat(4); // multiply in resultant column vector from the Ux solution.
+  for(int i=0;i<cmul.r*cmul.c;i++) { cmul.dat[i] *= ux.dat[i%ux.r]; }
+
+  Matrix id4 = id_mat(4); Matrix ret = id_mat(4);
+  for(int i=0;i<a.r;i++) { Matrix q = matrix(std::vector<float>(a.r,0),a.r,1); q.dat[i] = 1;
+    col_in_4x4(&ret,solve_tri(l,q,FRONT),i); } return ret; }
+
+// solves a triangular matrix back/front substitution.
+// expects square matrix (k x k) a, column vector (k x 1) col, and back/front.
+// WARNING: returns newly allocated pointer.
+Matrix solve_tri(Matrix a, Matrix col, int bf) {
+  Matrix ret = matrix(std::vector<float>(a.r),a.r,1);
+  // solves only front right now.
+  // TODO: consolidate into non-repeated code.
+  if(bf==FRONT) {
+    for(int i=0;i<a.r;i++) { ret.dat[i] = col.dat[i]; int j;
+      for(j=0;j<i;j++) { ret.dat[i] -= a.dat[i*a.r+j]*col.dat[j]; }
+      ret.dat[i] = ret.dat[i]/a.dat[i*a.r+j]; } return ret; }
+  if(bf==BACK) {
+    for(int i=a.r-1;i>=0;i--) { ret.dat[i] = col.dat[i]; int j;
+      for(j=a.r-1;j>i;j--) { ret.dat[i] -= a.dat[i*a.r+j]*col.dat[j]; }
+      ret.dat[i] = ret.dat[i]/a.dat[i*a.r+j]; } return ret; }
+  return id_mat(0); }
 
 // adapted from Wikipedia example for Crout matrix decomposition.
-void lu_decomp(Matrix ma, Matrix ml, Matrix mu) {
-  float *a = &ma.dat[0]; float *l = &ml.dat[0]; float *u = &mu.dat[0]; int n = ma.r;
+void lu_decomp(Matrix ma, Matrix *ml, Matrix *mu) {
+  float *a = &ma.dat[0]; float *l = &(ml->dat[0]); float *u = &(mu->dat[0]); int n = ma.r;
   for(int i=0;i<n;i++) { u[i*n+i] = 1; }
   for(int j=0;j<n;j++) { for(int i=j;i<n;i++) {
       float sum = 0; for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
       l[i*n+j] = a[i*n+j] - sum; }
     for(int i=j;i<n;i++) { float sum = 0;
       for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
-      if(l[j*n+j]==0) { ml = id_mat(0); mu = id_mat(0); return; /* dangerous for now */ }
+      if(l[j*n+j]==0) { *ml = id_mat(0); *mu = id_mat(0); return; /* dangerous for now */ }
       u[j*n+i] = (a[j*n+i]-sum)/l[j*n+j]; } } }

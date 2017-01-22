@@ -211,6 +211,11 @@ int main() { sf::ContextSettings settings;
   Matrix view = translate(id_mat(4),v3(0,0,-1));
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
+  /*Matrix testl = id_mat(4); Matrix testu = id_mat(4);
+  lu_decomp(projection,&testl,&testu);
+  print_matrix(projection); print_matrix(testl*testu);*/
+  print_matrix(projection*minvert(projection)); print_matrix(projection);
+
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
