@@ -214,7 +214,14 @@ int main() { sf::ContextSettings settings;
   /*Matrix testl = id_mat(4); Matrix testu = id_mat(4);
   lu_decomp(projection,&testl,&testu);
   print_matrix(projection); print_matrix(testl*testu);*/
-  print_matrix(projection*minvert(projection)); print_matrix(projection);
+  //print_matrix(minvert(projection)); print_matrix(projection);
+
+  std::vector<float> test =
+    { 3, -0.1, -0.2
+    , 0.1, 7, -0.3
+    , 0.3, -0.2, 10 }; minvert(matrix(test,3,3));
+
+  print_matrix(minvert(projection)*projection);
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);

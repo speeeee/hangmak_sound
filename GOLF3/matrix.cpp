@@ -91,15 +91,11 @@ void col_in_4x4(Matrix *a, Matrix col, int cn) {
 //     : respectively.
 Matrix minvert(Matrix a) { Matrix l = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
   Matrix u = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
-  lu_decomp(a,&l,&u); Matrix col = matrix(std::vector<float>(a.r,0),a.r,1);
-  Matrix ux = solve_tri(u,col,BACK); // returned matrix Ux is (a.r) x 1
-  print_matrix(ux);
-  Matrix cmul = id_mat(4); // multiply in resultant column vector from the Ux solution.
-  for(int i=0;i<cmul.r*cmul.c;i++) { cmul.dat[i] *= ux.dat[i%ux.r]; }
-
+  lu_decomp(a,&l,&u); //Matrix col = matrix(std::vector<float>(a.r,1),a.r,1);
   Matrix id4 = id_mat(4); Matrix ret = id_mat(4);
   for(int i=0;i<a.r;i++) { Matrix q = matrix(std::vector<float>(a.r,0),a.r,1); q.dat[i] = 1;
-    col_in_4x4(&ret,solve_tri(l,q,FRONT),i); } return ret; }
+    Matrix nl = solve_tri(l,q,FRONT);
+    col_in_4x4(&ret,solve_tri(u,nl,BACK),i); } return ret; }
 
 // solves a triangular matrix back/front substitution.
 // expects square matrix (k x k) a, column vector (k x 1) col, and back/front.
@@ -110,11 +106,11 @@ Matrix solve_tri(Matrix a, Matrix col, int bf) {
   // TODO: consolidate into non-repeated code.
   if(bf==FRONT) {
     for(int i=0;i<a.r;i++) { ret.dat[i] = col.dat[i]; int j;
-      for(j=0;j<i;j++) { ret.dat[i] -= a.dat[i*a.r+j]*col.dat[j]; }
+      for(j=0;j<i;j++) { ret.dat[i] -= a.dat[i*a.r+j]*ret.dat[j]; }
       ret.dat[i] = ret.dat[i]/a.dat[i*a.r+j]; } return ret; }
   if(bf==BACK) {
     for(int i=a.r-1;i>=0;i--) { ret.dat[i] = col.dat[i]; int j;
-      for(j=a.r-1;j>i;j--) { ret.dat[i] -= a.dat[i*a.r+j]*col.dat[j]; }
+      for(j=a.r-1;j>i;j--) { ret.dat[i] -= a.dat[i*a.r+j]*ret.dat[j]; }
       ret.dat[i] = ret.dat[i]/a.dat[i*a.r+j]; } return ret; }
   return id_mat(0); }
 
