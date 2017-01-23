@@ -124,7 +124,7 @@ const GLchar *sample_fs = "#version 130\n"
   "              (gl_DepthRange.far - gl_DepthRange.near);\n"
   "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
   "  vec4 pos = imvp*clip_pos;\n"
-  "  gl_FragColor = vec4(0.,pos.y+1.0,0.,1.); }\0";
+  "  gl_FragColor = vec4(0.,pos.y,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -240,9 +240,10 @@ int main() { sf::ContextSettings settings;
     mvp_set(default_program,model,view,projection);
     mvp_set(w->e[0].shader_id,model,view,projection);
 
+    Matrix mvp = projection*view*model;
     glUseProgram(w->e[0].shader_id);
     GLint _imvp = glGetUniformLocation(w->e[0].shader_id,"imvp");
-    Matrix imvp = minvert(projection*view*model);
+    Matrix imvp = minvert(mvp);
     glUniformMatrix4fv(_imvp,1,GL_TRUE,&imvp.dat[0]);
     paint(w,default_program); Projectile pp = next_state(w->p);
     /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);

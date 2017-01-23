@@ -95,7 +95,8 @@ Matrix minvert(Matrix a) { Matrix l = matrix(std::vector<float>(a.r*a.c),a.r,a.c
   Matrix id4 = id_mat(4); Matrix ret = id_mat(4);
   for(int i=0;i<a.r;i++) { Matrix q = matrix(std::vector<float>(a.r,0),a.r,1); q.dat[i] = 1;
     Matrix nl = solve_tri(l,q,FRONT);
-    col_in_4x4(&ret,solve_tri(u,nl,BACK),i); } return ret; }
+    Matrix nu = solve_tri(u,nl,BACK);
+    col_in_4x4(&ret,nu,i); } return ret; }
 
 // solves a triangular matrix back/front substitution.
 // expects square matrix (k x k) a, column vector (k x 1) col, and back/front.
@@ -114,6 +115,7 @@ Matrix solve_tri(Matrix a, Matrix col, int bf) {
       ret.dat[i] = ret.dat[i]/a.dat[i*a.r+j]; } return ret; }
   return id_mat(0); }
 
+// NOTE: likely incorrect.
 // adapted from Wikipedia example for Crout matrix decomposition.
 void lu_decomp(Matrix ma, Matrix *ml, Matrix *mu) {
   float *a = &ma.dat[0]; float *l = &(ml->dat[0]); float *u = &(mu->dat[0]); int n = ma.r;
@@ -122,6 +124,6 @@ void lu_decomp(Matrix ma, Matrix *ml, Matrix *mu) {
       float sum = 0; for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
       l[i*n+j] = a[i*n+j] - sum; }
     for(int i=j;i<n;i++) { float sum = 0;
-      for(int k=0;k<j;k++) { sum += l[i*n+k] * u[k*n+j]; }
-      if(l[j*n+j]==0) { *ml = id_mat(0); *mu = id_mat(0); return; /* dangerous for now */ }
+      for(int k=0;k<j;k++) { sum += l[j*n+k] * u[k*n+i]; }
+      if(l[j*n+j]==0) { *ml = id_mat(0); *mu = id_mat(0); printf("failure\n"); return; /* dangerous for now */ }
       u[j*n+i] = (a[j*n+i]-sum)/l[j*n+j]; } } }
