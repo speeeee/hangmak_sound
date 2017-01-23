@@ -118,8 +118,13 @@ const GLchar *sample_vs = "#version 130\n"
   "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
 const GLchar *sample_fs = "#version 130\n"
   "uniform ivec2 u_res;\n"
-  "void main() { vec2 pos = gl_FragCoord.xy/u_res;\n"
-  "  gl_FragColor = vec4(0.,pos.y,0.,1.); }\0";
+  "uniform mat4 imvp;\n"
+  "void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
+  "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
+  "              (gl_DepthRange.far - gl_DepthRange.near);\n"
+  "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
+  "  vec4 pos = imvp*clip_pos;\n"
+  "  gl_FragColor = vec4(0.,pos.y+1.0,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -151,10 +156,8 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
 // expects model, view, and projection matrices to be named 'model', 'view', and 'projection'
 //   in the shader.
 // WARNING: current shader is still bound to 'prog' after call.
-void mvp_init(GLuint prog, Matrix model, Matrix view, Matrix projection) {
+void mvp_set(GLuint prog, Matrix model, Matrix view, Matrix projection) {
   glUseProgram(prog);
-
-  glBindAttribLocation(prog,0,"position");
 
   GLint _model = glGetUniformLocation(prog,"model");
   glUniformMatrix4fv(_model,1,GL_TRUE,&model.dat[0]);
@@ -208,20 +211,8 @@ int main() { sf::ContextSettings settings;
   glewInit();
 
   Matrix model = translate(id_mat(4),v3(-0.5,0,-0.5));
-  Matrix view = translate(id_mat(4),v3(0,0,-1));
+  Matrix view = translate(id_mat(4),v3(0,0,-1.5));
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
-
-  /*Matrix testl = id_mat(4); Matrix testu = id_mat(4);
-  lu_decomp(projection,&testl,&testu);
-  print_matrix(projection); print_matrix(testl*testu);*/
-  //print_matrix(minvert(projection)); print_matrix(projection);
-
-  std::vector<float> test =
-    { 3, -0.1, -0.2
-    , 0.1, 7, -0.3
-    , 0.3, -0.2, 10 }; minvert(matrix(test,3,3));
-
-  print_matrix(minvert(projection)*projection);
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
@@ -232,14 +223,27 @@ int main() { sf::ContextSettings settings;
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
-  mvp_init(w->e[0].shader_id,model,view,projection);
+  mvp_set(w->e[0].shader_id,model,view,projection);
+  glBindAttribLocation(w->e[0].shader_id,0,"position");
   GLint u_res = glGetUniformLocation(w->e[0].shader_id,"u_res");
   glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
   GLuint default_program = create_program(default_vs,default_fs);
-  mvp_init(default_program,model,view,projection);
+  mvp_set(default_program,model,view,projection);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+      model = rotate(model,0.01,v3(1,0,0)); }
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+      model = rotate(model,0.01,v3(-1,0,0)); }
+    // TODO: optimize this so it does not reset every frame.
+    mvp_set(default_program,model,view,projection);
+    mvp_set(w->e[0].shader_id,model,view,projection);
+
+    glUseProgram(w->e[0].shader_id);
+    GLint _imvp = glGetUniformLocation(w->e[0].shader_id,"imvp");
+    Matrix imvp = minvert(projection*view*model);
+    glUniformMatrix4fv(_imvp,1,GL_TRUE,&imvp.dat[0]);
     paint(w,default_program); Projectile pp = next_state(w->p);
     /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
     window.display(); } glDeleteVertexArrays(1,&w->e[0].vao); return 0; }
