@@ -41,6 +41,9 @@ float dist(Vec2, Vec2);
 
 // convert first three contents of array/vector and returns a 3D-vector
 Vec3 arr_to_vec(float *);
+// WARNING: this function modifies argument 2.  Only use this function where it is known
+//        : how many times it will be used. 
+void asadd(Vec3, float *, int);
 
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; float rad; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3, float);
@@ -67,7 +70,7 @@ typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
                  std::vector<Entity> e; /* tile for processing. */ } World;
 
-typedef std::function<Projectile(World *, Triangle, Projectile)> CollisionF;
+typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
 
 struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> vpts;

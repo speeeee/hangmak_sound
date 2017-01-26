@@ -24,6 +24,8 @@ Vec3 vneg(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 float dist(Vec2 a, Vec2 b) { return sqrt(pow(b.x-a.x,2.)+pow(b.z-a.z,2.)); }
 
 Vec3 arr_to_vec(float *t) { return v3(t[0],t[1],t[2]); }
+void asadd(Vec3 pos, float *t, int sz) { for(int i=0;i<sz;i+=3) {
+  t[i] += pos.x; t[i+1] += pos.y; t[i+2] += pos.z; } }
 
 Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos, float rad) {
   return (Projectile) { acc, vel, pos, rad }; }

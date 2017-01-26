@@ -10,6 +10,8 @@
 Projectile next_state(Projectile);
 
 // if pl_side is true, add normal vector scaled to current.
+// NOTE: tests collision wrt Entity position.  Triangle positions should be relative to the
+//     : entity position, and are treated as such in test_collide.
 void test_collide(World *, Projectile, CollisionF);
 void entity_collide(World *, Projectile);
-Projectile rigid_elastic(World *, Triangle, Projectile);
+Projectile rigid_elastic(World *, Projectile, Triangle, Projectile);
