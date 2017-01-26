@@ -42,8 +42,8 @@ void d_triangulation(GLuint vao, int nsteps) {
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
 
-#define EX_STEP (0.1)
-#define EX_NSTEPS (10)
+#define EX_STEP (0.02)
+#define EX_NSTEPS (50)
 typedef std::function<float(float, float)> FuncXZ;
 float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
@@ -85,8 +85,10 @@ std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
 // vector of buffers for bounds of entities.  deleted at end of program run.
 std::vector<GLuint> bufs;
 
-Entity sample_entity(CollisionF cf) {
+Entity sample_entity(CollisionF cf, Vec3 pos) {
   std::vector<float> tris = triangulate(ex_fun,EX_STEP,EX_NSTEPS);
+  std::vector<Triangle> btris = to_triangles(tris,EX_STEP);
+  asadd(pos,&tris[0],tris.size());
 
   GLuint vao; glGenVertexArrays(1,&vao);
   glBindVertexArray(vao);
@@ -97,8 +99,7 @@ Entity sample_entity(CollisionF cf) {
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
                                                     //   glBindAttribLocation(..).
 
-  return entity(v3(0,0,0),to_triangles(tris,EX_STEP),triangulate(ex_fun,EX_STEP,EX_NSTEPS)
-               ,vao,ex_bounds_2,cf,0); }
+  return entity(pos,btris,tris,vao,ex_bounds_2,cf,0); }
 
 const GLchar *default_vs = "#version 130\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
@@ -124,7 +125,7 @@ const GLchar *sample_fs = "#version 130\n"
   "              (gl_DepthRange.far - gl_DepthRange.near);\n"
   "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
   "  vec4 pos = imvp*clip_pos;\n"
-  "  gl_FragColor = vec4(0.,pos.y,0.,1.); }\0";
+  "  gl_FragColor = vec4(0.,pos.y+0.5,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -215,11 +216,11 @@ int main() { sf::ContextSettings settings;
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.55,1,0.16),0.05);
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
   /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
   w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
   w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
-  w->e.push_back(sample_entity(rigid_elastic));
+  w->e.push_back(sample_entity(rigid_elastic,v3(0.25,0,-0.25)));
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
