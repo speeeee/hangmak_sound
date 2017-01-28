@@ -73,7 +73,11 @@ typedef struct { Projectile p; // main 'ball' that is controlled.
 typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
 
+typedef struct { int disp; int sz; int nsteps; GLuint vao; } VAOdat;
+VAOdat vao_dat(int, int, int, GLuint);
+// 'vpts' is no longer used.  uses of 'vao' are to be removed.  both properties will be removed
+//   once both are nowhere in the code.
 struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> vpts;
-                GLuint vao; BoundsF bf; CollisionF cf; GLuint shader_id; };
-Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, GLuint, BoundsF, CollisionF, GLuint);
+                VAOdat vd; BoundsF bf; CollisionF cf; GLuint shader_id; };
+Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, VAOdat, BoundsF, CollisionF, GLuint);
 #endif
