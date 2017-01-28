@@ -28,7 +28,7 @@ void d_tris(World *w) { for(int i=0;i<w->e.size();i++) {
 void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
   glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
-// TODO: switch triangulation to retained mode with VAO.
+// DONE: switch triangulation to retained mode with VAO.
 /*void d_triangulation(std::vector<float> vpts, int nsteps) {
   // in immediate mode right now, but will switch to drawing from a VAO.
   // recall that for every step, there are 2 points drawn.
@@ -38,6 +38,9 @@ void d_triangulation(GLuint vao, int nsteps) {
   // assume total steps to be the square of nsteps.
   glBindVertexArray(vao);
   for(int i=0;i<nsteps;i++) { glDrawArrays(GL_TRIANGLE_STRIP,i*nsteps*2,nsteps*2); } }
+void d_triangulation_2(VAOdat vaod) {
+  glBindVertexArray(vaod.vao); // vaod.disp should be 5000, not 15000.
+  for(int i=0;i<vaod.sz;i++) { glDrawArrays(GL_TRIANGLE_STRIP,vaod.disp+i*vaod.nsteps,vaod.nsteps); } }
 
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
@@ -46,6 +49,7 @@ int curr_id = 0;
 #define EX_NSTEPS (50)
 typedef std::function<float(float, float)> FuncXZ;
 float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
+float ex_fun_1(float x, float z) { return cos(5.0*x)/5.0+cos(5.0*z)/5.0; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
 int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
 
@@ -53,6 +57,7 @@ int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
    |\|\|...
    1 3 5...
 */
+// TODO: dedicated x-step and y-step as well as x-nsteps and y-nsteps.
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
   // every step has two points for drawing, both on the same x-coordinate.
   // six total floats for each step.
@@ -64,6 +69,7 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
       /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
                                           ,ret[ind+5]);*/ } }
   return ret; }
+// TODO: dedicated x-step and y-step.
 std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
   std::vector<Triangle> ret;
   for(int i=0;i<arr.size();i+=3*2) { Triangle a, b;
@@ -85,7 +91,38 @@ std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
 // vector of buffers for bounds of entities.  deleted at end of program run.
 std::vector<GLuint> bufs;
 
-Entity sample_entity(CollisionF cf, Vec3 pos) {
+// DONE: create_entities: store entities created into single VAO at different displacements.
+//     : struct VAOdat { int disp; int sz; GLuint vao; };
+typedef std::tuple<CollisionF,FuncXZ,Vec3,float,int> EntInit;
+EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
+  return std::make_tuple(cf,f,pos,step,nsteps); }
+// DONE: create VAOdat for given input.
+std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entity> ret;
+  std::vector<float> dat;
+  GLuint vao; glGenVertexArrays(1,&vao);
+  for(int i=0;i<ei.size();i++) {
+    CollisionF cf = std::get<0>(ei[i]); FuncXZ f = std::get<1>(ei[i]);
+    Vec3 pos = std::get<2>(ei[i]); float step = std::get<3>(ei[i]); int nsteps = std::get<4>(ei[i]);
+
+    std::vector<float> tris = triangulate(f,step,nsteps);
+    std::vector<Triangle> btris = to_triangles(tris,step);
+    asadd(pos,&tris[0],tris.size());
+    // calculation for vaod.pos is dat.size()/3 (dat.size() is guaranteed to be a multiple of 3).
+    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/3,nsteps,nsteps*2,vao),ex_bounds_2,cf,0));
+    /* append to dat vector tris */
+    dat.reserve(dat.size()+tris.size());
+    dat.insert(dat.end(),tris.begin(),tris.end()); }
+  glBindVertexArray(vao);
+  GLuint buf; glGenBuffers(1,&buf);
+  glBindBuffer(GL_ARRAY_BUFFER, buf);
+  glBufferData(GL_ARRAY_BUFFER,dat.size()*sizeof(float),&dat[0],GL_STATIC_DRAW);
+  // assume limit is 16.
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
+                                                    //   glBindAttribLocation(..).
+
+  return ret; }
+/*Entity sample_entity(CollisionF cf, Vec3 pos) {
   std::vector<float> tris = triangulate(ex_fun,EX_STEP,EX_NSTEPS);
   std::vector<Triangle> btris = to_triangles(tris,EX_STEP);
   asadd(pos,&tris[0],tris.size());
@@ -99,7 +136,7 @@ Entity sample_entity(CollisionF cf, Vec3 pos) {
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
                                                     //   glBindAttribLocation(..).
 
-  return entity(pos,btris,tris,vao,ex_bounds_2,cf,0); }
+  return entity(pos,btris,tris,vao,ex_bounds_2,cf,0); }*/
 
 const GLchar *default_vs = "#version 130\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
@@ -108,8 +145,7 @@ const GLchar *default_vs = "#version 130\n"
 const GLchar *default_fs = "#version 130\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.,1.); }\0";
 
-// DONE: add uniform for position.
-// TODO: put MVP and inverse-P in fragment shader for computing eye-position.
+// DONE: put MVP and inverse-P in fragment shader for computing eye-position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
 const GLchar *sample_vs = "#version 130\n"
   "in vec3 position;\n"
@@ -174,7 +210,7 @@ void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //glRotatef(30,-1,0,0);
   glUseProgram(w->e[0].shader_id);
-  d_triangulation(w->e[0].vao,EX_NSTEPS);
+  d_triangulation_2(w->e[0].vd); d_triangulation_2(w->e[1].vd);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -211,16 +247,15 @@ int main() { sf::ContextSettings settings;
   glewExperimental = GL_TRUE;
   glewInit();
 
-  Matrix model = translate(id_mat(4),v3(-0.5,0,-0.5));
+  Matrix model = translate(id_mat(4),v3(-0.5,0,-1.0));
   Matrix view = translate(id_mat(4),v3(0,0,-1.5));
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
-  /*w->e.push_back(entity(v3(0,0,0),std::vector<Triangle>(),0,ex_bounds,rigid_elastic,0));
-  w->e[0].t.push_back(t_centroid(triangle(v3(0,0,0),v2(0,0),v2(0,1),v2(1,0),unit(v3(0.5,0.5,0)))));
-  w->e[0].t.push_back(t_centroid(triangle(v3(sqrt(2)/2,0,0),v2(0,0),v2(0,0.5),v2(1,0),unit(v3(-0.5,0.5,0)))));*/
-  w->e.push_back(sample_entity(rigid_elastic,v3(0.25,0,-0.25)));
+
+  w->e = create_entities({ einit(rigid_elastic,ex_fun,v3(0.25,0,-0.25),EX_STEP,EX_NSTEPS)
+                         , einit(rigid_elastic,ex_fun_1,v3(0.25,0,0.75),EX_STEP,EX_NSTEPS) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
@@ -248,4 +283,4 @@ int main() { sf::ContextSettings settings;
     glUniformMatrix4fv(_imvp,1,GL_TRUE,&imvp.dat[0]);
     paint(w,default_program); Projectile pp = next_state(w->p);
     /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
-    window.display(); } glDeleteVertexArrays(1,&w->e[0].vao); return 0; }
+    window.display(); } glDeleteVertexArrays(1,&w->e[0].vd.vao); return 0; }
