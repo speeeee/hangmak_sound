@@ -14,6 +14,10 @@ Vec3 vsub3(Vec3 a, Vec3 b) { return v3(a.x-b.x,a.y-b.y,a.z-b.z); }
 Vec2 vadd2(Vec2 a, Vec2 b) { return v2(a.x+b.x,a.z+b.z); }
 Vec3 vadd3(Vec3 a, Vec3 b) { return v3(a.x+b.x,a.y+b.y,a.z+b.z); }
 
+Vec3 operator+(Vec3 a, Vec3 b) { return vadd3(a,b); }
+Vec3 operator-(Vec3 a, Vec3 b) { return vsub3(a,b); }
+bool operator==(Vec3 a, Vec3 b) { return a.x==b.x&&a.y==b.y&&a.z==b.z; }
+
 Vec2 proj_xz(Vec3 a) { return v2(a.x,a.z); }
 
 Vec3 vcmul(Vec3 a, Vec3 b) { return v3(a.x*b.x,a.y*b.y,a.z*b.z); }

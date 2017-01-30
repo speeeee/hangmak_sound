@@ -50,6 +50,7 @@ int curr_id = 0;
 typedef std::function<float(float, float)> FuncXZ;
 float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 float ex_fun_1(float x, float z) { return cos(5.0*x)/5.0+cos(5.0*z)/5.0; }
+float ex_fun_2(float x, float z) { return pow(x-0.5,2.)+pow(z-0.5,2.); }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
 int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
 
@@ -239,6 +240,24 @@ Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRU
          .
 */
 
+void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
+  // TODO: make cleaner code.
+  Vec3 axis = v3(0,0,0);
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+    axis = axis+v3(1,0,0); }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+    axis = axis+v3(-1,0,0); }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+    axis = axis+v3(0,1,0); }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+    axis = axis+v3(0,-1,0); }
+  if(!(axis==v3(0,0,0))) {*model = rotate(*model,0.01,axis); }
+
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::I)) {
+    *view = translate(*view,v3(0,0,0.01)); }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::O)) {
+    *view = translate(*view,v3(0,0,-0.01)); } }
+
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
   settings.majorVersion = 3; settings.minorVersion = 0;
@@ -254,7 +273,7 @@ int main() { sf::ContextSettings settings;
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
-  w->e = create_entities({ einit(rigid_elastic,ex_fun,v3(0.25,0,-0.25),EX_STEP,EX_NSTEPS)
+  w->e = create_entities({ einit(rigid_elastic,ex_fun_2,v3(0.25,0,-0.25),EX_STEP,EX_NSTEPS)
                          , einit(rigid_elastic,ex_fun_1,v3(0.25,0,0.75),EX_STEP,EX_NSTEPS) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
@@ -268,10 +287,7 @@ int main() { sf::ContextSettings settings;
   mvp_set(default_program,model,view,projection);
   for(bool r = true;r;) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-      model = rotate(model,0.01,v3(1,0,0)); }
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-      model = rotate(model,0.01,v3(-1,0,0)); }
+    handle_input(&model,&view,&projection);
     // TODO: optimize this so it does not reset every frame.
     mvp_set(default_program,model,view,projection);
     mvp_set(w->e[0].shader_id,model,view,projection);

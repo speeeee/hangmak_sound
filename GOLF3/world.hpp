@@ -27,6 +27,10 @@ Vec3 vsub3(Vec3, Vec3);
 Vec2 vadd2(Vec2, Vec2);
 Vec3 vadd3(Vec3, Vec3);
 
+Vec3 operator+(Vec3, Vec3);
+Vec3 operator-(Vec3, Vec3);
+bool operator==(Vec3, Vec3);
+
 Vec2 proj_xz(Vec3);
 
 // multiplies each component of the two vectors together.
