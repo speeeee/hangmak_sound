@@ -70,7 +70,7 @@ std::vector<float> triangulate_0(FuncXZ f, float step, int nsteps) { int tsz;
       /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
                                           ,ret[ind+5]);*/ } }
   return ret; }
-std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
+std::vector<float> triangulate_1(FuncXZ f, float step, int nsteps) { int tsz;
   // every step has two points for drawing, both on the same x-coordinate.
   // six total floats for each step.  this is doubled for all associated normals.
   int floats_per_vert = 3;
@@ -89,6 +89,43 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
       ret[ind+6] = j/fpg*step; ret[ind+7] = f(j/fpg*step,i*step+step); ret[ind+8] = i*step+step;
       /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
                                           ,ret[ind+5]);*/ } }
+  for(int i=0;i<102;i++) { printf("%g, ",ret[i]); }
+  return ret; }
+// TODO: needs significant refactoring.
+std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
+  // every step has two points for drawing, both on the same x-coordinate.
+  // six total floats for each step.  this is doubled for all associated normals.
+  int floats_per_vert = 3;
+  // one group is, in this case, the two vertices whose line is parallel to z-axis.
+  //   e.g. |||||| : two vertices per line.
+  int verts_per_group = 2;
+  int n_attribs       = 2;
+
+  // attributes per vertex * floats_per_vert
+  int apv = floats_per_vert*n_attribs; // = 6
+
+  // floats_per_group
+  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
+
+  std::vector<float> ret((tsz = nsteps*nsteps)*fpg);
+  for(int i=0;i<nsteps;i++) { int d = i*nsteps*fpg;
+    // first triangle case:
+    ret[d] = 0; ret[d+1] = f(0,i*step); ret[d+2] = i*step;
+    ret[d+6] = 0; ret[d+7] = f(0,i*step+step); ret[d+8] = i*step+step;
+    ret[d+12] = step; ret[d+13] = f(step,i*step); ret[d+14] = i*step;
+    Vec3 a = arr_to_vec(&ret[d]); Vec3 b = arr_to_vec(&ret[d+6]); Vec3 c = arr_to_vec(&ret[d+12]);
+    Vec3 norm = unit(cross(b-a,c-a));
+    ret[d+3] = norm.x; ret[d+4] = norm.y; ret[d+5] = norm.z;
+    ret[d+9] = norm.x; ret[d+10] = norm.y; ret[d+11] = norm.z;
+    ret[d+15] = norm.x; ret[d+16] = norm.y; ret[d+17] = norm.z;
+    for(int j=apv*3;j<nsteps*fpg;j+=apv) { int ind = j+d;
+      if((j/apv)%2) { ret[ind+1] = f(j/fpg*step,i*step+step); ret[ind+2] = i*step+step; }
+      else { ret[ind+1] = f(j/fpg*step,i*step); ret[ind+2] = i*step; }
+      ret[ind] = j/fpg*step;
+      Vec3 a = arr_to_vec(&ret[ind]); Vec3 b = arr_to_vec(&ret[ind-apv]);
+      Vec3 c = arr_to_vec(&ret[ind-apv*2]);
+      Vec3 norm = cross(a-b,a-c); // reversed for positive result.
+      ret[ind+3] = norm.x; ret[ind+4] = norm.y; ret[ind+5] = norm.z; } }
   return ret; }
 // TODO: dedicated x-step and y-step.
 std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
@@ -112,6 +149,7 @@ std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
     Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+apv*2]);
     Vec3 tr = arr_to_vec(&arr[i+apv*3]); Vec3 tl = arr_to_vec(&arr[i+apv*1]);
 
+    // TODO: chage the normal vector calculation since it is already stored now.
     a.norm = unit(cross(vsub3(tl,bl),vsub3(tr,bl)));
     b.norm = unit(vneg(cross(vsub3(tl,tr),vsub3(br,tr))));
     a.pos = bl; b.pos = tr;
