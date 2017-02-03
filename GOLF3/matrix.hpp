@@ -20,6 +20,8 @@ float dot_in_mat(float *, float *, int, int);
 Matrix mmul(Matrix, Matrix);
 Matrix operator*(Matrix, Matrix);
 
+Matrix mtrunc(Matrix);
+
 //glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f);
 // TODO: fix problem with narrowing conversion.
 Matrix frustum_pers(float, float, float, float, float, float);

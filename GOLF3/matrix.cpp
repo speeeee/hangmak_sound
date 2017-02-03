@@ -29,6 +29,9 @@ Matrix mmul(Matrix a, Matrix b) { if(a.c!=b.r) { return id_mat(0); }
   ret.dat = dat; return ret; }
 Matrix operator*(Matrix a, Matrix b) { return mmul(a,b); }
 
+Matrix mtrunc(Matrix a) { Matrix b = matrix(std::vector<float>((a.r-1)*(a.c-1)),a.r-1,a.c-1);
+  for(int i=0;i<b.r*b.c;i++) { b.dat[i] = a.dat[i+i/a.c]; } return b; }
+
 //glFrustum(-ratio,ratio,-1.f,1.f,1.f,500.f);
 Matrix frustum_pers(float left, float right, float bottom, float top, float near, float far) {
   Matrix ret; ret.r = ret.c = 4;
