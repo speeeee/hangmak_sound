@@ -122,9 +122,15 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
       if((j/apv)%2) { ret[ind+1] = f(j/fpg*step,i*step+step); ret[ind+2] = i*step+step; }
       else { ret[ind+1] = f(j/fpg*step,i*step); ret[ind+2] = i*step; }
       ret[ind] = j/fpg*step;
+
       Vec3 a = arr_to_vec(&ret[ind]); Vec3 b = arr_to_vec(&ret[ind-apv]);
       Vec3 c = arr_to_vec(&ret[ind-apv*2]);
-      Vec3 norm = cross(a-b,a-c); // reversed for positive result.
+      Vec3 v0 = b-a; Vec3 v1 = c-a;
+      if((j/apv)%2) { v0.x = -v0.x; v0.z = -v0.z; v0.y = -v0.y;
+                      v1.x = -v1.x; v1.z = -v1.z; v1.y = -v1.y; }
+      else { v0.x = -v0.x; v0.y = -v0.y;
+             v1.x = -v1.x; v1.y = -v1.y; }
+      norm = unit(cross(v0,v1)); 
       ret[ind+3] = norm.x; ret[ind+4] = norm.y; ret[ind+5] = norm.z; } }
   return ret; }
 // TODO: dedicated x-step and y-step.
@@ -221,7 +227,7 @@ const GLchar *default_vs = "#version 130\n"
   "void main() { gl_FrontColor = gl_Color;\n"
   "gl_Position = projection*view*model*gl_Vertex; }\0";
 const GLchar *default_fs = "#version 130\n"
-  "void main() { gl_FragColor = vec4(0.,1.,0.,1.); }\0";
+  "void main() { gl_FragColor = vec4(0.,1.,0.9,1.); }\0";
 
 // DONE: put MVP and inverse-P in fragment shader for computing eye-position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
@@ -229,6 +235,7 @@ const GLchar *sample_vs = "#version 130\n"
   "in vec3 position; out vec3 frag_pos;\n"
   "in vec3 norm; out vec3 frag_norm;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
+  "out mat4 frag_model;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
   "void main() {\n"
   "  frag_pos = position; frag_norm = norm;\n"
@@ -245,6 +252,7 @@ const GLchar *sample_fs = "#version 130\n"
   "uniform ivec2 u_res;\n"
   //"uniform mat4 imvp;\n"
   "uniform mat3 u_imod;\n"
+  "in mat4 frag_model;\n"
   "in vec3 frag_pos; in vec3 frag_norm;\n"
   /*"void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
   "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
@@ -252,7 +260,9 @@ const GLchar *sample_fs = "#version 130\n"
   "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
   "  vec4 pos = imvp*clip_pos;\n"*/
   "void main() {\n"
-  "  gl_FragColor = vec4(0.,frag_pos.y+0.5,0.,1.); }\0";
+  "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light
+  "  float brightness = dot(-light,frag_norm);\n"
+  "  gl_FragColor = vec4(0.,brightness+0.1,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
