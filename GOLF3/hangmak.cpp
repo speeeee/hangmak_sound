@@ -59,7 +59,7 @@ int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
    1 3 5...
 */
 // TODO: dedicated x-step and y-step as well as x-nsteps and y-nsteps.
-std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
+std::vector<float> triangulate_0(FuncXZ f, float step, int nsteps) { int tsz;
   // every step has two points for drawing, both on the same x-coordinate.
   // six total floats for each step.
   std::vector<float> ret((tsz = nsteps*nsteps)*6);
@@ -70,15 +70,48 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
       /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
                                           ,ret[ind+5]);*/ } }
   return ret; }
+std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
+  // every step has two points for drawing, both on the same x-coordinate.
+  // six total floats for each step.  this is doubled for all associated normals.
+  int floats_per_vert = 3;
+  // one group is, in this case, the two vertices whose line is parallel to z-axis.
+  //   e.g. |||||| : two vertices per line.
+  int verts_per_group = 2;
+  int n_attribs       = 2;
+
+  // floats_per_group
+  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
+
+  std::vector<float> ret((tsz = nsteps*nsteps)*fpg);
+  for(int i=0;i<nsteps;i++) { // just skips normals for now.
+    for(int j=0;j<nsteps*fpg;j+=fpg) { /* ||||| */ int ind = j+i*nsteps*fpg;
+      ret[ind] = j/fpg*step; ret[ind+1] = f(j/fpg*step,i*step); ret[ind+2] = i*step;
+      ret[ind+6] = j/fpg*step; ret[ind+7] = f(j/fpg*step,i*step+step); ret[ind+8] = i*step+step;
+      /*printf("<%g, %g, %g> <%g, %g, %g>\n",ret[ind],ret[ind+1],ret[ind+2],ret[ind+3],ret[ind+4]
+                                          ,ret[ind+5]);*/ } }
+  return ret; }
 // TODO: dedicated x-step and y-step.
 std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
+  int floats_per_vert = 3;
+  // one group is, in this case, the two vertices whose line is parallel to z-axis.
+  //   e.g. |||||| : two vertices per line.
+  int verts_per_group = 2;
+  int n_attribs       = 2;
+
+  // attributes per vertex * floats_per_vert
+  int apv = floats_per_vert*n_attribs; // = 6
+
+  // floats_per_group
+  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
+
   std::vector<Triangle> ret;
-  for(int i=0;i<arr.size();i+=3*2) { Triangle a, b;
+  for(int i=0;i<arr.size();i+=fpg) { Triangle a, b;
     a.a = v2(0,0); a.b = v2(0,step); a.c = v2(step,0);
     b.a = v2(step,step); b.b = v2(step,0); b.c = v2(0,step);
-    // call t_centroid before push.
-    Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+3*2]);
-    Vec3 tr = arr_to_vec(&arr[i+3*3]); Vec3 tl = arr_to_vec(&arr[i+3*1]);
+
+    Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+apv*2]);
+    Vec3 tr = arr_to_vec(&arr[i+apv*3]); Vec3 tl = arr_to_vec(&arr[i+apv*1]);
+
     a.norm = unit(cross(vsub3(tl,bl),vsub3(tr,bl)));
     b.norm = unit(vneg(cross(vsub3(tl,tr),vsub3(br,tr))));
     a.pos = bl; b.pos = tr;
@@ -99,6 +132,7 @@ EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
   return std::make_tuple(cf,f,pos,step,nsteps); }
 // DONE: create VAOdat for given input.
 std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entity> ret;
+  // assumes stride of 6 currently.
   std::vector<float> dat;
   GLuint vao; glGenVertexArrays(1,&vao);
   for(int i=0;i<ei.size();i++) {
@@ -107,9 +141,10 @@ std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entit
 
     std::vector<float> tris = triangulate(f,step,nsteps);
     std::vector<Triangle> btris = to_triangles(tris,step);
-    asadd(pos,&tris[0],tris.size());
-    // calculation for vaod.pos is dat.size()/3 (dat.size() is guaranteed to be a multiple of 3).
-    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/3,nsteps,nsteps*2,vao),ex_bounds_2,cf,0));
+    asadd(pos,&tris[0],tris.size(),6); // for stride.
+    // calculation for vaod.pos is dat.size()/stride
+    //   (dat.size() is guaranteed to be a multiple of stride).
+    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao),ex_bounds_2,cf,0));
     /* append to dat vector tris */
     dat.reserve(dat.size()+tris.size());
     dat.insert(dat.end(),tris.begin(),tris.end()); }
@@ -118,9 +153,13 @@ std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entit
   glBindBuffer(GL_ARRAY_BUFFER, buf);
   glBufferData(GL_ARRAY_BUFFER,dat.size()*sizeof(float),&dat[0],GL_STATIC_DRAW);
   // assume limit is 16.
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
+  GLuint pos_attrib = 0; GLuint norm_attrib = 1;
+  glEnableVertexAttribArray(pos_attrib); // attribute location, e.g. (location = 0) for position.
+  glVertexAttribPointer(pos_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT),0); // reminder: first argument requires
                                                     //   glBindAttribLocation(..).
+  glEnableVertexAttribArray(norm_attrib);
+  glVertexAttribPointer(norm_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT)
+                       ,(const GLvoid *)(3*sizeof(GL_FLOAT)));
 
   return ret; }
 /*Entity sample_entity(CollisionF cf, Vec3 pos) {
@@ -149,20 +188,33 @@ const GLchar *default_fs = "#version 130\n"
 // DONE: put MVP and inverse-P in fragment shader for computing eye-position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
 const GLchar *sample_vs = "#version 130\n"
-  "in vec3 position;\n"
+  "in vec3 position; out vec3 frag_pos;\n"
+  "in vec3 norm; out vec3 frag_norm;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
   "void main() {\n"
+  "  frag_pos = position; frag_norm = norm;\n"
   "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
+/* DONE: add normals for each vertex to triangulate, scaling stride to 3*sizeof(GLfloat),
+   *       array is now made to fit the normal vectors, but the normal is not created yet.
+       : pass normals to vertex shader as (location = 1) and forward to fragment shader,
+       : perform lighting calculations. */
+/* CHANGES SO FAR:
+     add input vector 'norm' where (location = 1) (through glBindAttribLocation)
+     'norm' must be enabled and have been assigned by glVertexAttribPointer.
+   TODO: move location binding and attrib pointer assignment to isolated function. */
 const GLchar *sample_fs = "#version 130\n"
   "uniform ivec2 u_res;\n"
-  "uniform mat4 imvp;\n"
-  "void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
+  //"uniform mat4 imvp;\n"
+  "uniform mat3 u_imod;\n"
+  "in vec3 frag_pos; in vec3 frag_norm;\n"
+  /*"void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
   "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
   "              (gl_DepthRange.far - gl_DepthRange.near);\n"
   "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
-  "  vec4 pos = imvp*clip_pos;\n"
-  "  gl_FragColor = vec4(0.,pos.y+0.5,0.,1.); }\0";
+  "  vec4 pos = imvp*clip_pos;\n"*/
+  "void main() {\n"
+  "  gl_FragColor = vec4(0.,frag_pos.y+0.5,0.,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -171,7 +223,7 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   
   GLint compiled = 0;
   glGetShaderiv(vs,GL_COMPILE_STATUS,&compiled);
-  if(!compiled) { GLint mlen = 0;
+  if(!compiled) { printf("Vertex error:\n"); GLint mlen = 0;
     glGetShaderiv(vs,GL_INFO_LOG_LENGTH, &mlen);
     std::vector<GLchar> error_log(mlen);
     glGetShaderInfoLog(vs,mlen,&mlen,&error_log[0]);
@@ -188,7 +240,8 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
 
   GLuint prog; prog = glCreateProgram();
   glAttachShader(prog,vs); glAttachShader(prog,fs);
-  glBindAttribLocation(prog,0,"position"); glLinkProgram(prog);
+  glBindAttribLocation(prog,0,"position");
+  glBindAttribLocation(prog,1,"norm"); glLinkProgram(prog);
   glDeleteShader(vs); glDeleteShader(fs); return prog; }
 
 // expects model, view, and projection matrices to be named 'model', 'view', and 'projection'
@@ -279,7 +332,6 @@ int main() { sf::ContextSettings settings;
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
   mvp_set(w->e[0].shader_id,model,view,projection);
-  glBindAttribLocation(w->e[0].shader_id,0,"position");
   GLint u_res = glGetUniformLocation(w->e[0].shader_id,"u_res");
   glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
@@ -292,11 +344,11 @@ int main() { sf::ContextSettings settings;
     mvp_set(default_program,model,view,projection);
     mvp_set(w->e[0].shader_id,model,view,projection);
 
-    Matrix mvp = projection*view*model;
+    Matrix model_3 = mtrunc(model);
     glUseProgram(w->e[0].shader_id);
-    GLint _imvp = glGetUniformLocation(w->e[0].shader_id,"imvp");
-    Matrix imvp = minvert(mvp);
-    glUniformMatrix4fv(_imvp,1,GL_TRUE,&imvp.dat[0]);
+    GLint _imod = glGetUniformLocation(w->e[0].shader_id,"u_imod");
+    Matrix imod = minvert(model_3);
+    glUniformMatrix4fv(_imod,1,GL_TRUE,&imod.dat[0]);
     paint(w,default_program); Projectile pp = next_state(w->p);
     /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
     window.display(); } glDeleteVertexArrays(1,&w->e[0].vd.vao); return 0; }
