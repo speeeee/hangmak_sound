@@ -11,9 +11,10 @@ Projectile next_state(Projectile a) { Vec3 nv = vadd3(a.acc, a.vel);
 Projectile test_collide(World *w, Projectile pp, Entity e) {
   Projectile orig = w->p; Projectile res = pp;
   orig.pos = vsub3(orig.pos,e.pos); res.pos = vsub3(res.pos,e.pos);
-  for(int i=0;i<e.t.size();i++) { 
-    if(in_triangle(proj_xz(res.pos),e.t[i])&&pl_side_ball(orig,res,e.t[i])) {
-      res = (e.cf)(w,orig,e.t[i],res); } } res.pos = vadd3(res.pos,e.pos); return res; }
+  if(e.bf(proj_xz(pp.pos))) {
+    for(int i=0;i<e.t.size();i++) { 
+      if(in_triangle(proj_xz(res.pos),e.t[i])&&pl_side_ball(orig,res,e.t[i])) {
+        res = (e.cf)(w,orig,e.t[i],res); } } res.pos = vadd3(res.pos,e.pos); } return res; }
 void entity_collide(World *w, Projectile pp) { Projectile res = pp;
   for(int j=0;j<w->e.size();j++) { res = test_collide(w,res,w->e[j]); } w->p = res; }
 

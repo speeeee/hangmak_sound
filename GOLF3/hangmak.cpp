@@ -46,13 +46,18 @@ void d_triangulation_2(VAOdat vaod) {
 int curr_id = 0;
 
 #define EX_STEP (0.02)
-#define EX_NSTEPS (50)
+#define EX_NSTEPS (250)
 typedef std::function<float(float, float)> FuncXZ;
 float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 float ex_fun_1(float x, float z) { return cos(5.0*x)/5.0+cos(5.0*z)/5.0; }
 float ex_fun_2(float x, float z) { return pow(x-0.5,2.)+pow(z-0.5,2.); }
+float hole_0(float x, float z) { return 1./(2*(1+exp(-5*(-(z-3+pow(x-3.8,2.)/2.)))))
+                                        +sin(4*x)/8+cos(3*x)/12+sin(3*z)/8
+                                        +cos(5*z)/12; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
-int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<0.5&&a.z>0&&a.z<0.5; }
+int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<5.0&&a.z>0&&a.z<5.0; }
+
+// DONE: add bounds function for each entity so not all entities' triangles are calculated.
 
 /* 2 4 6...
    |\|\|...
@@ -206,21 +211,6 @@ std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entit
                        ,(const GLvoid *)(3*sizeof(GL_FLOAT)));
 
   return ret; }
-/*Entity sample_entity(CollisionF cf, Vec3 pos) {
-  std::vector<float> tris = triangulate(ex_fun,EX_STEP,EX_NSTEPS);
-  std::vector<Triangle> btris = to_triangles(tris,EX_STEP);
-  asadd(pos,&tris[0],tris.size());
-
-  GLuint vao; glGenVertexArrays(1,&vao);
-  glBindVertexArray(vao);
-  GLuint buf; glGenBuffers(1,&buf);
-  glBindBuffer(GL_ARRAY_BUFFER, buf);
-  glBufferData(GL_ARRAY_BUFFER,tris.size()*sizeof(float),&tris[0],GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0); // TODO: scale this with arrays.
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0); // reminder: first argument requires
-                                                    //   glBindAttribLocation(..).
-
-  return entity(pos,btris,tris,vao,ex_bounds_2,cf,0); }*/
 
 const GLchar *default_vs = "#version 130\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
@@ -247,7 +237,9 @@ const GLchar *sample_vs = "#version 130\n"
 /* CHANGES SO FAR:
      add input vector 'norm' where (location = 1) (through glBindAttribLocation)
      'norm' must be enabled and have been assigned by glVertexAttribPointer.
-   TODO: move location binding and attrib pointer assignment to isolated function. */
+   DONE* move location binding and attrib pointer assignment to isolated function. */
+
+// TODO: add first course with shader for the bounds of each type of terrain.
 const GLchar *sample_fs = "#version 130\n"
   "uniform ivec2 u_res;\n"
   //"uniform mat4 imvp;\n"
@@ -312,7 +304,7 @@ void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //glRotatef(30,-1,0,0);
   glUseProgram(w->e[0].shader_id);
-  d_triangulation_2(w->e[0].vd); d_triangulation_2(w->e[1].vd);
+  for(int i=0;i<w->e.size();i++) { d_triangulation_2(w->e[i].vd); } //d_triangulation_2(w->e[1].vd);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -374,8 +366,7 @@ int main() { sf::ContextSettings settings;
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
-  w->e = create_entities({ einit(rigid_elastic,ex_fun_2,v3(0.25,0,-0.25),EX_STEP,EX_NSTEPS)
-                         , einit(rigid_elastic,ex_fun_1,v3(0.25,0,0.75),EX_STEP,EX_NSTEPS) });
+  w->e = create_entities({ einit(rigid_elastic,hole_0,v3(0,0,0),EX_STEP,EX_NSTEPS) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
