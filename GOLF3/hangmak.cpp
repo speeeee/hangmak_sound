@@ -254,7 +254,11 @@ const GLchar *sample_fs = "#version 130\n"
   "void main() {\n"
   "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light
   "  float brightness = dot(-light,frag_norm);\n"
-  "  gl_FragColor = vec4(0.,brightness+0.1,0.,1.); }\0";
+  "  vec3 color = vec3(0.,0.,0.); vec3 p = frag_pos;\n"
+  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=sqrt(1.-pow(p.x-2.5,2.)/4.)+2./(1.+exp(-3.*(p.x-2.5)))\n"
+  "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/4.)) {\n"
+  "    color.g = 0.9; } else { color.g = 0.5; }\n"
+  "  gl_FragColor = vec4(color.rgb*brightness+0.1,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -354,7 +358,7 @@ void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
   settings.majorVersion = 3; settings.minorVersion = 0;
-  sf::Window window(sf::VideoMode(200, 200), "hang", sf::Style::Default, settings);
+  sf::Window window(sf::VideoMode(800, 800), "hang", sf::Style::Default, settings);
   window.setVerticalSyncEnabled(true); Matrix projection = gl_init(&window);
   glewExperimental = GL_TRUE;
   glewInit();
