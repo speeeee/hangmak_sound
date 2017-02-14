@@ -240,6 +240,7 @@ const GLchar *sample_vs = "#version 130\n"
    DONE* move location binding and attrib pointer assignment to isolated function. */
 
 // TODO: add first course with shader for the bounds of each type of terrain.
+// TODO: add grass effect (perlin noise?).
 const GLchar *sample_fs = "#version 130\n"
   "uniform ivec2 u_res;\n"
   //"uniform mat4 imvp;\n"
@@ -251,13 +252,19 @@ const GLchar *sample_fs = "#version 130\n"
   "              (gl_DepthRange.far - gl_DepthRange.near);\n"
   "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
   "  vec4 pos = imvp*clip_pos;\n"*/
+  // as isz grows, the curve gets smaller.
+  "float curve_0(float x, float isz) {\n"
+  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
   "void main() {\n"
   "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light
   "  float brightness = dot(-light,frag_norm);\n"
   "  vec3 color = vec3(0.,0.,0.); vec3 p = frag_pos;\n"
-  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=sqrt(1.-pow(p.x-2.5,2.)/4.)+2./(1.+exp(-3.*(p.x-2.5)))\n"
+  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.)"
   "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/4.)) {\n"
-  "    color.g = 0.9; } else { color.g = 0.5; }\n"
+  "    color.g = 0.7; } else { color.g = 0.5; }\n"
+  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.1)"
+  "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./1.1,2))/1.1) {\n"
+  "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
   "  gl_FragColor = vec4(color.rgb*brightness+0.1,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
@@ -348,7 +355,7 @@ void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
     axis = axis+v3(0,1,0); }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
     axis = axis+v3(0,-1,0); }
-  if(!(axis==v3(0,0,0))) {*model = rotate(*model,0.01,axis); }
+  if(!(axis==v3(0,0,0))) { *model = rotate(*model,0.01,axis); }
 
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::I)) {
     *view = translate(*view,v3(0,0,0.01)); }
