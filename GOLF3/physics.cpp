@@ -23,3 +23,5 @@ Projectile rigid_elastic(World *w, Projectile orig, Triangle t, Projectile pp) {
   // pp.vel = pp.vel - 2(pp.vel . normal)normal
   pp.vel = vsmul(DEGRADE,vsub3(pp.vel,vsmul(2*dot(pp.vel,t.norm),t.norm)));
   /*w->p.acc = pp.acc; w->p.vel = pp.vel;*/ pp.pos = orig.pos; return pp; }
+
+Projectile no_react(World *w, Projectile orig, Triangle t, Projectile pp) { return pp; }

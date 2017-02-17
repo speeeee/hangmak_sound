@@ -15,3 +15,4 @@ Projectile next_state(Projectile);
 void test_collide(World *, Projectile, CollisionF);
 void entity_collide(World *, Projectile);
 Projectile rigid_elastic(World *, Projectile, Triangle, Projectile);
+Projectile no_react(World *, Projectile, Triangle, Projectile);
