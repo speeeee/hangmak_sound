@@ -176,24 +176,28 @@ std::vector<GLuint> bufs;
 
 // DONE: create_entities: store entities created into single VAO at different displacements.
 //     : struct VAOdat { int disp; int sz; GLuint vao; };
-typedef std::tuple<CollisionF,FuncXZ,Vec3,float,int> EntInit;
-EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
-  return std::make_tuple(cf,f,pos,step,nsteps); }
+// TODO: change to not force function-based render.
+// TODO: change EntInit to <CollisionF,std::vector<float>>.  direct to triangulate.
+//typedef std::tuple<CollisionF,FuncXZ,Vec3,float,int> EntInit;
+//EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
+//  return std::make_tuple(cf,f,pos,step,nsteps); }
 // DONE: create VAOdat for given input.
-std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entity> ret;
+std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entity> ret;
   // assumes stride of 6 currently.
   std::vector<float> dat;
   GLuint vao; glGenVertexArrays(1,&vao);
   for(int i=0;i<ei.size();i++) {
-    CollisionF cf = std::get<0>(ei[i]); FuncXZ f = std::get<1>(ei[i]);
+    CollisionF cf = std::get<0>(ei[i]); std::vector<float> tris = std::get<1>(ei[i]);
     Vec3 pos = std::get<2>(ei[i]); float step = std::get<3>(ei[i]); int nsteps = std::get<4>(ei[i]);
 
-    std::vector<float> tris = triangulate(f,step,nsteps);
     std::vector<Triangle> btris = to_triangles(tris,step);
     asadd(pos,&tris[0],tris.size(),6); // for stride.
-    // calculation for vaod.pos is dat.size()/stride
-    //   (dat.size() is guaranteed to be a multiple of stride).
-    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao),ex_bounds_2,cf,0));
+
+    if(std::get<5>(ei[i])) {
+      // calculation for vaod.pos is dat.size()/stride
+      //   (dat.size() is guaranteed to be a multiple of stride).
+      ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao)
+                          ,ex_bounds_2,cf,0)); }
     /* append to dat vector tris */
     dat.reserve(dat.size()+tris.size());
     dat.insert(dat.end(),tris.begin(),tris.end()); }
@@ -212,18 +216,20 @@ std::vector<Entity> create_entities(std::vector<EntInit> ei) { std::vector<Entit
 
   return ret; }
 
-const GLchar *default_vs = "#version 130\n"
+// TODO: rewrite for circle drawing.  Translate circle based off of given uniform position vector.
+//     : rotate to always face camera.  Shade based off of global light.
+const GLchar *default_vs = "#version 330\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
   "void main() { gl_FrontColor = gl_Color;\n"
   "gl_Position = projection*view*model*gl_Vertex; }\0";
-const GLchar *default_fs = "#version 130\n"
+const GLchar *default_fs = "#version 330\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.9,1.); }\0";
 
 // DONE: put MVP and inverse-P in fragment shader for computing eye-position.
 // NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
-const GLchar *sample_vs = "#version 130\n"
-  "in vec3 position; out vec3 frag_pos;\n"
-  "in vec3 norm; out vec3 frag_norm;\n"
+const GLchar *sample_vs = "#version 330\n"
+  "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
+  "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
   "out mat4 frag_model;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
@@ -241,7 +247,7 @@ const GLchar *sample_vs = "#version 130\n"
 
 // TODO: add first course with shader for the bounds of each type of terrain.
 // TODO: add grass effect (perlin noise?).
-const GLchar *sample_fs = "#version 130\n"
+const GLchar *sample_fs = "#version 330\n"
   "uniform ivec2 u_res;\n"
   //"uniform mat4 imvp;\n"
   "uniform mat3 u_imod;\n"
@@ -291,8 +297,8 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
 
   GLuint prog; prog = glCreateProgram();
   glAttachShader(prog,vs); glAttachShader(prog,fs);
-  glBindAttribLocation(prog,0,"position");
-  glBindAttribLocation(prog,1,"norm"); glLinkProgram(prog);
+  /*glBindAttribLocation(prog,0,"position");
+  glBindAttribLocation(prog,1,"norm");*/ glLinkProgram(prog);
   glDeleteShader(vs); glDeleteShader(fs); return prog; }
 
 // expects model, view, and projection matrices to be named 'model', 'view', and 'projection'
@@ -364,7 +370,7 @@ void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
 
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
-  settings.majorVersion = 3; settings.minorVersion = 0;
+  settings.majorVersion = 3; settings.minorVersion = 3;
   sf::Window window(sf::VideoMode(800, 800), "hang", sf::Style::Default, settings);
   window.setVerticalSyncEnabled(true); Matrix projection = gl_init(&window);
   glewExperimental = GL_TRUE;
@@ -377,7 +383,8 @@ int main() { sf::ContextSettings settings;
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
-  w->e = create_entities({ einit(rigid_elastic,hole_0,v3(0,0,0),EX_STEP,EX_NSTEPS) });
+  w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
+                                ,EX_STEP,EX_NSTEPS,true) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 

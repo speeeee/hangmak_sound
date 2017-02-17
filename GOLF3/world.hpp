@@ -84,4 +84,7 @@ VAOdat vao_dat(int, int, int, GLuint);
 struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> vpts;
                 VAOdat vd; BoundsF bf; CollisionF cf; GLuint shader_id; };
 Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, VAOdat, BoundsF, CollisionF, GLuint);
+
+typedef std::tuple<CollisionF,std::vector<float>,Vec3,float,int,bool> EntBase;
+EntBase einit(CollisionF, std::vector<float>, Vec3, float, int, bool);
 #endif
