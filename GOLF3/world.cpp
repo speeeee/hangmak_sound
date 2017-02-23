@@ -1,10 +1,14 @@
 #include "world.hpp"
 #include <cmath>
+#include <cstdio>
+#include <numeric>
 
 Vec3 v3(float x, float y, float z) { return (Vec3) { x, y, z }; }
 Vec2 v2(float x, float z) { return (Vec2) { x, z }; }
 Triangle triangle(Vec3 pos, Vec2 a, Vec2 b, Vec2 c, Vec3 norm) {
   return (Triangle) { pos, a, b, c, norm }; }
+
+void p_vec3(Vec3 a) { printf("<%g,%g,%g>\n",a.x,a.y,a.z); }
 
 Vec2 centroid(Triangle a) { return v2((a.a.x+a.b.x+a.c.x)/3.,(a.a.z+a.b.z+a.c.z)/3.); }
 
@@ -37,8 +41,8 @@ void asadd(Vec3 pos, float *t, int sz, int stride) { for(int i=0;i<sz;i+=stride)
 Vec3 norm_positive(Vec3 a, Vec3 b, Vec3 c) {
   Vec3 v0 = b-a; Vec3 v1 = c-a;
 
-  v0 = v3(abs(v0.x),abs(v0.y),abs(v0.z));
-  v1 = v3(abs(v0.x),abs(v0.y),abs(v0.z));
+  v0 = v3(std::fabs(v0.x),std::fabs(v0.y),std::fabs(v0.z));
+  v1 = v3(std::fabs(v1.x),std::fabs(v1.y),std::fabs(v1.z));
   return unit(cross(v0,v1)); }
   
 

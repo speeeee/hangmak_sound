@@ -16,6 +16,7 @@ Vec3 unit(Vec3);
 float dot(Vec3, Vec3);
 float len(Vec3);
 float angle(Vec3 a, Vec3 b);
+void p_vec3(Vec3);
 
 typedef struct { float x; float z; } Vec2;
 Vec2 v2(float,float);
