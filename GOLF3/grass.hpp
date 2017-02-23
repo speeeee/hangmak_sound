@@ -27,4 +27,4 @@
 //   blade.  Note that with less detail, the grass will react more rigidly to the wind.
 //   arc is a signed value that represents the intensity of the arc of the blade.  How the arc
 //   of the blade exactly relates to the value is to be determined TODO.
-std::vector<float> grass_blade(float width, float height, int detail, float arc);
+std::vector<float> grass_blade(float width, float height, int detail, float t0, float t1);

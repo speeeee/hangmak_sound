@@ -11,6 +11,7 @@
 #include "bounds.hpp"
 #include "physics.hpp"
 #include "matrix.hpp"
+#include "grass.hpp"
 
 #define PI 3.14159265358979
 
@@ -191,7 +192,8 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
     CollisionF cf = std::get<0>(ei[i]); std::vector<float> tris = std::get<1>(ei[i]);
     Vec3 pos = std::get<2>(ei[i]); float step = std::get<3>(ei[i]); int nsteps = std::get<4>(ei[i]);
 
-    std::vector<Triangle> btris = to_triangles(tris,step);
+    std::vector<Triangle> btris;
+    if(std::get<5>(ei[i])) { btris = to_triangles(tris,step); }
     asadd(pos,&tris[0],tris.size(),6); // for stride.
 
     // calculation for vaod.pos is dat.size()/stride
@@ -262,7 +264,7 @@ const GLchar *sample_fs = "#version 330\n"
   "float curve_0(float x, float isz) {\n"
   "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
   "void main() {\n"
-  "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light
+  "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light (0,-1,0)
   "  float brightness = dot(-light,frag_norm);\n"
   "  vec3 color = vec3(0.,0.,0.); vec3 p = frag_pos;\n"
   "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.)"
@@ -271,7 +273,7 @@ const GLchar *sample_fs = "#version 330\n"
   "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.1)"
   "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./1.1,2))/1.1) {\n"
   "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
-  "  gl_FragColor = vec4(color.rgb*brightness+0.1,1.); }\0";
+  "  gl_FragColor = vec4(color.rgb*brightness+0.2,1.); }\0";
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
@@ -384,7 +386,9 @@ int main() { sf::ContextSettings settings;
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
-                                ,EX_STEP,EX_NSTEPS,true) });
+                                ,EX_STEP,EX_NSTEPS,true),
+                           einit(no_react,grass_blade(0.25,0.5,1,0,0),v3(0.1,0,0.1)
+                                ,0,2,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
