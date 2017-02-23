@@ -16,7 +16,8 @@ Projectile test_collide(World *w, Projectile pp, Entity e) {
       if(in_triangle(proj_xz(res.pos),e.t[i])&&pl_side_ball(orig,res,e.t[i])) {
         res = (e.cf)(w,orig,e.t[i],res); } } res.pos = vadd3(res.pos,e.pos); } return res; }
 void entity_collide(World *w, Projectile pp) { Projectile res = pp;
-  for(int j=0;j<w->e.size();j++) { res = test_collide(w,res,w->e[j]); } w->p = res; }
+  for(int j=0;j<w->e.size();j++) {
+    if(w->e[j].enable) { res = test_collide(w,res,w->e[j]); } } w->p = res; }
 
 // world not used.
 Projectile rigid_elastic(World *w, Projectile orig, Triangle t, Projectile pp) {

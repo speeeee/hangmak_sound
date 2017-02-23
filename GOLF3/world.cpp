@@ -31,6 +31,17 @@ Vec3 arr_to_vec(float *t) { return v3(t[0],t[1],t[2]); }
 void asadd(Vec3 pos, float *t, int sz, int stride) { for(int i=0;i<sz;i+=stride) {
   t[i] += pos.x; t[i+1] += pos.y; t[i+2] += pos.z; } }
 
+// line ab and ac never make an angle less than 90 degrees.
+// not ideal, but works so far.
+// TODO: generalize this.
+Vec3 norm_positive(Vec3 a, Vec3 b, Vec3 c) {
+  Vec3 v0 = b-a; Vec3 v1 = c-a;
+
+  v0 = v3(abs(v0.x),abs(v0.y),abs(v0.z));
+  v1 = v3(abs(v0.x),abs(v0.y),abs(v0.z));
+  return unit(cross(v0,v1)); }
+  
+
 Projectile projectile(Vec3 acc, Vec3 vel, Vec3 pos, float rad) {
   return (Projectile) { acc, vel, pos, rad }; }
 
@@ -56,8 +67,8 @@ Vec3 cross(Vec3 a, Vec3 b) {
 VAOdat vao_dat(int disp, int sz, int nsteps, GLuint vao) {
   return (VAOdat) { disp, sz, nsteps, vao }; }
 Entity entity(Vec3 pos, std::vector<Triangle> t, std::vector<float> vpts, VAOdat vao, BoundsF bf
-             ,CollisionF cf, GLuint shader_id) {
-  return (Entity) { pos, t, vpts, vao, bf, cf, shader_id }; }
+             ,CollisionF cf, bool enable, GLuint shader_id) {
+  return (Entity) { pos, t, vpts, vao, bf, cf, enable, shader_id }; }
 
 EntBase einit(CollisionF cf, std::vector<float> tris, Vec3 pos, float step, int nsteps, bool coll) {
   return std::make_tuple(cf,tris,pos,step,nsteps,coll); }

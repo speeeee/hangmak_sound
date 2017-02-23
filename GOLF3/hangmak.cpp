@@ -123,6 +123,7 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
     ret[d+3] = norm.x; ret[d+4] = norm.y; ret[d+5] = norm.z;
     ret[d+9] = norm.x; ret[d+10] = norm.y; ret[d+11] = norm.z;
     ret[d+15] = norm.x; ret[d+16] = norm.y; ret[d+17] = norm.z;
+    // TODO: possible error in third triangle.
     for(int j=apv*3;j<nsteps*fpg;j+=apv) { int ind = j+d;
       if((j/apv)%2) { ret[ind+1] = f(j/fpg*step,i*step+step); ret[ind+2] = i*step+step; }
       else { ret[ind+1] = f(j/fpg*step,i*step); ret[ind+2] = i*step; }
@@ -193,11 +194,10 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
     std::vector<Triangle> btris = to_triangles(tris,step);
     asadd(pos,&tris[0],tris.size(),6); // for stride.
 
-    if(std::get<5>(ei[i])) {
-      // calculation for vaod.pos is dat.size()/stride
-      //   (dat.size() is guaranteed to be a multiple of stride).
-      ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao)
-                          ,ex_bounds_2,cf,0)); }
+    // calculation for vaod.pos is dat.size()/stride
+    //   (dat.size() is guaranteed to be a multiple of stride).
+    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao)
+                        ,ex_bounds_2,cf,std::get<5>(ei[i]),0));
     /* append to dat vector tris */
     dat.reserve(dat.size()+tris.size());
     dat.insert(dat.end(),tris.begin(),tris.end()); }

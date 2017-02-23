@@ -49,6 +49,8 @@ Vec3 arr_to_vec(float *);
 //        : how many times it will be used. 
 void asadd(Vec3, float *, int, int);
 
+Vec3 norm_positive(Vec3, Vec3, Vec3);
+
 typedef struct { Vec3 acc; Vec3 vel; Vec3 pos; float rad; } Projectile;
 Projectile projectile(Vec3, Vec3, Vec3, float);
 
@@ -82,8 +84,9 @@ VAOdat vao_dat(int, int, int, GLuint);
 // 'vpts' is no longer used.  uses of 'vao' are to be removed.  both properties will be removed
 //   once both are nowhere in the code.
 struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> vpts;
-                VAOdat vd; BoundsF bf; CollisionF cf; GLuint shader_id; };
-Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, VAOdat, BoundsF, CollisionF, GLuint);
+                VAOdat vd; BoundsF bf; CollisionF cf; bool enable; GLuint shader_id; };
+Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, VAOdat, BoundsF, CollisionF
+             ,bool, GLuint);
 
 typedef std::tuple<CollisionF,std::vector<float>,Vec3,float,int,bool> EntBase;
 EntBase einit(CollisionF, std::vector<float>, Vec3, float, int, bool);
