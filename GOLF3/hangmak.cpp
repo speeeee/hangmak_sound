@@ -37,9 +37,13 @@ void d_triangulation(GLuint vao, int nsteps) {
   // assume total steps to be the square of nsteps.
   glBindVertexArray(vao);
   for(int i=0;i<nsteps;i++) { glDrawArrays(GL_TRIANGLE_STRIP,i*nsteps*2,nsteps*2); } }
-void d_triangulation_2(VAOdat vaod) {
+void d_tri_instanced(VAOdat vaod, GLenum mode, int n) {
+  glBindVertexArray(vaod.vao);
+  for(int i=0;i<vaod.sz;i++) {
+    glDrawArraysInstanced(mode,vaod.disp+i*vaod.nsteps,vaod.nsteps,n); } }
+void d_triangulation_2(VAOdat vaod, GLenum mode) {
   glBindVertexArray(vaod.vao); // vaod.disp should be 5000, not 15000.
-  for(int i=0;i<vaod.sz;i++) { glDrawArrays(GL_TRIANGLE_STRIP,vaod.disp+i*vaod.nsteps,vaod.nsteps); } }
+  for(int i=0;i<vaod.sz;i++) { glDrawArrays(mode,vaod.disp+i*vaod.nsteps,vaod.nsteps); } }
 
 /* ==== entity draw test ========================================= */
 int curr_id = 0;
@@ -282,7 +286,7 @@ const GLchar *grass_vs = "#version 330\n"
   "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
   "                                        +sin(4.*x)/8+cos(3.*x)/12+sin(3.*z)/8.\n"
   "                                        +cos(5.*z)/12; }\n"
-  "int n = 100; float interval = 0.005;\n"
+  "int n = 100; float interval = 0.05;\n"
   "void main() {\n"
   "  frag_pos = position; frag_norm = norm;\n"
   "  vec3 npos = vec3(position.x+mod(gl_InstanceID,n)*interval"
@@ -342,9 +346,9 @@ void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //glRotatef(30,-1,0,0);
   glUseProgram(w->e[0].shader_id);
-  d_triangulation_2(w->e[0].vd);
+  d_triangulation_2(w->e[0].vd,GL_TRIANGLE_STRIP);
   glUseProgram(w->e[1].shader_id);
-  d_triangulation_2(w->e[1].vd);
+  d_tri_instanced(w->e[1].vd,GL_TRIANGLE_STRIP,10000);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -408,7 +412,7 @@ int main() { sf::ContextSettings settings;
 
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
                                 ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
-                           einit(no_react,grass_blade(0.25,0.5,1,0,0),v3(0.1,0,0.1)
+                           einit(no_react,grass_blade(0.03,0.1,1,0,0),v3(0,0,0)
                                 ,0,1,3,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
