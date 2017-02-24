@@ -15,6 +15,10 @@
 
 #define PI 3.14159265358979
 
+// TODO: implement draw function for instanced drawing.
+// NOTE: current number of rows and columns of grass blades is n = 100.
+//     : the interval separating them is interval = 0.005 .
+
 void d_v3(Vec3 a) { glVertex3f(a.x,a.y,a.z); }
 void d_v2(Vec2 a) { glVertex3f(a.x,0,a.z); }
 // requires origin be on centroid.
@@ -270,6 +274,26 @@ const GLchar *sample_fs = "#version 330\n"
   "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
   "  gl_FragColor = vec4(color.rgb*brightness+0.2,1.); }\0";
 
+const GLchar *grass_vs = "#version 330\n"
+  "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
+  "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
+  "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
+  "out mat4 frag_model;\n"
+  "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
+  "                                        +sin(4.*x)/8+cos(3.*x)/12+sin(3.*z)/8.\n"
+  "                                        +cos(5.*z)/12; }\n"
+  "int n = 100; float interval = 0.005;\n"
+  "void main() {\n"
+  "  frag_pos = position; frag_norm = norm;\n"
+  "  vec3 npos = vec3(position.x+mod(gl_InstanceID,n)*interval"
+  "                  ,0,position.z+(gl_InstanceID/n)*interval);\n"
+  "  npos.y = position.y+hole_0(npos.x,npos.z);\n"
+  "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
+const GLchar *grass_fs = "#version 330\n"
+  "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm;\n"
+  "void main() {\n"
+  "  gl_FragColor = vec4(0.,frag_pos.y*2.+0.3,0.2,1.); }\0"; 
+
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
 
@@ -286,7 +310,7 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   glShaderSource(fs,1,&fsh,NULL); glCompileShader(fs);
   compiled = 0;
   glGetShaderiv(fs,GL_COMPILE_STATUS,&compiled);
-  if(!compiled) { GLint mlen = 0;
+  if(!compiled) { printf("Fragment error:\n"); GLint mlen = 0;
     glGetShaderiv(fs,GL_INFO_LOG_LENGTH, &mlen);
     std::vector<GLchar> error_log(mlen);
     glGetShaderInfoLog(fs,mlen,&mlen,&error_log[0]);
@@ -318,7 +342,9 @@ void paint(World *w,GLuint default_program) {
   glLoadIdentity(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   //glRotatef(30,-1,0,0);
   glUseProgram(w->e[0].shader_id);
-  for(int i=0;i<w->e.size();i++) { d_triangulation_2(w->e[i].vd); } //d_triangulation_2(w->e[1].vd);
+  d_triangulation_2(w->e[0].vd);
+  glUseProgram(w->e[1].shader_id);
+  d_triangulation_2(w->e[1].vd);
   glUseProgram(default_program);
   d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
 
@@ -386,8 +412,10 @@ int main() { sf::ContextSettings settings;
                                 ,0,1,3,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
+  w->e[1].shader_id = create_program(grass_vs,grass_fs);
 
   mvp_set(w->e[0].shader_id,model,view,projection);
+  mvp_set(w->e[1].shader_id,model,view,projection);
   GLint u_res = glGetUniformLocation(w->e[0].shader_id,"u_res");
   glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
@@ -399,6 +427,7 @@ int main() { sf::ContextSettings settings;
     // TODO: optimize this so it does not reset every frame.
     mvp_set(default_program,model,view,projection);
     mvp_set(w->e[0].shader_id,model,view,projection);
+    mvp_set(w->e[1].shader_id,model,view,projection);
 
     Matrix model_3 = mtrunc(model);
     glUseProgram(w->e[0].shader_id);
