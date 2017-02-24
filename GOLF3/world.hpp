@@ -89,6 +89,6 @@ struct Entity { Vec3 pos; std::vector<Triangle> t; std::vector<float> vpts;
 Entity entity(Vec3, std::vector<Triangle>, std::vector<float>, VAOdat, BoundsF, CollisionF
              ,bool, GLuint);
 
-typedef std::tuple<CollisionF,std::vector<float>,Vec3,float,int,bool> EntBase;
-EntBase einit(CollisionF, std::vector<float>, Vec3, float, int, bool);
+typedef std::tuple<CollisionF,std::vector<float>,Vec3,float,int,int,bool> EntBase;
+EntBase einit(CollisionF, std::vector<float>, Vec3, float, int, int, bool);
 #endif

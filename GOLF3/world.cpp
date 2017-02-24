@@ -74,5 +74,6 @@ Entity entity(Vec3 pos, std::vector<Triangle> t, std::vector<float> vpts, VAOdat
              ,CollisionF cf, bool enable, GLuint shader_id) {
   return (Entity) { pos, t, vpts, vao, bf, cf, enable, shader_id }; }
 
-EntBase einit(CollisionF cf, std::vector<float> tris, Vec3 pos, float step, int nsteps, bool coll) {
-  return std::make_tuple(cf,tris,pos,step,nsteps,coll); }
+EntBase einit(CollisionF cf, std::vector<float> tris, Vec3 pos, float step, int nsteps
+             ,int aug, bool coll) {
+  return std::make_tuple(cf,tris,pos,step,nsteps,aug,coll); }
