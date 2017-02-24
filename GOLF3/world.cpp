@@ -58,7 +58,7 @@ Triangle center_right(Triangle a, Vec3 orig, Vec3 xv, Vec3 yv) {
   return a; }
 
 Vec3 unit(Vec3 a) { float u = pow(pow(a.x,2)+pow(a.y,2)+pow(a.z,2),0.5);
-  return (Vec3) { a.x/u, a.y/u, a.z/u }; }
+  return u==0?v3(0,0,0):(Vec3) { a.x/u, a.y/u, a.z/u }; }
 float dot(Vec3 a, Vec3 b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
 float len(Vec3 a) { return pow(pow(a.x,2.)+pow(a.y,2.)+pow(a.z,2.),0.5); }
 float len2(Vec2 a) { return pow(pow(a.x,2.)+pow(a.z,2.),0.5); }

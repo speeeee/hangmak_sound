@@ -259,7 +259,7 @@ const GLchar *sample_fs = "#version 330\n"
   "float curve_0(float x, float isz) {\n"
   "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
   "void main() {\n"
-  "  vec3 light = normalize(vec3(0.,-1.,0.));\n" // example light (0,-1,0)
+  "  vec3 light = normalize(vec3(0.,-1.,-.05));\n" // example light (0,-1,0)
   "  float brightness = dot(-light,frag_norm);\n"
   "  vec3 color = vec3(0.,0.,0.); vec3 p = frag_pos;\n"
   "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.)"
@@ -383,7 +383,7 @@ int main() { sf::ContextSettings settings;
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
                                 ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
                            einit(no_react,grass_blade(0.25,0.5,1,0,0),v3(0.1,0,0.1)
-                                ,0,1,4,false) });
+                                ,0,1,3,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
