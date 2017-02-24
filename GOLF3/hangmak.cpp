@@ -29,12 +29,6 @@ void d_tris(World *w) { for(int i=0;i<w->e.size();i++) {
 void d_square(float x, float y, float z, float w) { glBegin(GL_QUADS);
   glVertex3f(x,y,z); glVertex3f(x+w,y,z); glVertex3f(x+w,y+w,z); glVertex3f(x,y+w,z);
   glEnd(); } // temporary function
-// DONE: switch triangulation to retained mode with VAO.
-/*void d_triangulation(std::vector<float> vpts, int nsteps) {
-  // in immediate mode right now, but will switch to drawing from a VAO.
-  // recall that for every step, there are 2 points drawn.
-  for(int i=0;i<nsteps;i++) { glBegin(GL_TRIANGLE_STRIP); for(int j=0;j<nsteps*2;j++) {
-    glVertex3fv(&vpts[j*3+i*nsteps*6]); } glEnd(); } }*/
 void d_triangulation(GLuint vao, int nsteps) {
   // assume total steps to be the square of nsteps.
   glBindVertexArray(vao);
@@ -132,12 +126,13 @@ std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
 
       Vec3 a = arr_to_vec(&ret[ind]); Vec3 b = arr_to_vec(&ret[ind-apv]);
       Vec3 c = arr_to_vec(&ret[ind-apv*2]);
-      Vec3 v0 = b-a; Vec3 v1 = c-a;
+      /*Vec3 v0 = b-a; Vec3 v1 = c-a;
       if((j/apv)%2) { v0.x = -v0.x; v0.z = -v0.z; v0.y = -v0.y;
                       v1.x = -v1.x; v1.z = -v1.z; v1.y = -v1.y; }
       else { v0.x = -v0.x; v0.y = -v0.y;
              v1.x = -v1.x; v1.y = -v1.y; }
-      norm = unit(cross(v0,v1)); 
+      norm = unit(cross(v0,v1));*/
+      if((j/apv)%2) { norm = norm_positive(a,b,c); } else { norm = norm_positive(c,b,a); }
       ret[ind+3] = norm.x; ret[ind+4] = norm.y; ret[ind+5] = norm.z; } }
   return ret; }
 // TODO: dedicated x-step and y-step.
@@ -178,7 +173,7 @@ std::vector<GLuint> bufs;
 
 // DONE: create_entities: store entities created into single VAO at different displacements.
 //     : struct VAOdat { int disp; int sz; GLuint vao; };
-// TODO: change to not force function-based render.
+// DONE: change to not force function-based render.
 // TODO: change EntInit to <CollisionF,std::vector<float>>.  direct to triangulate.
 //typedef std::tuple<CollisionF,FuncXZ,Vec3,float,int> EntInit;
 //EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
@@ -193,12 +188,12 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
     Vec3 pos = std::get<2>(ei[i]); float step = std::get<3>(ei[i]); int nsteps = std::get<4>(ei[i]);
 
     std::vector<Triangle> btris;
-    if(std::get<5>(ei[i])) { btris = to_triangles(tris,step); }
+    if(std::get<6>(ei[i])) { btris = to_triangles(tris,step); }
     asadd(pos,&tris[0],tris.size(),6); // for stride.
 
     // calculation for vaod.pos is dat.size()/stride
     //   (dat.size() is guaranteed to be a multiple of stride).
-    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,nsteps*2,vao)
+    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,std::get<5>(ei[i]),vao)
                         ,ex_bounds_2,cf,std::get<5>(ei[i]),0));
     /* append to dat vector tris */
     dat.reserve(dat.size()+tris.size());
@@ -248,7 +243,7 @@ const GLchar *sample_vs = "#version 330\n"
    DONE* move location binding and attrib pointer assignment to isolated function. */
 
 // TODO: add first course with shader for the bounds of each type of terrain.
-// TODO: add grass effect (perlin noise?).
+// NOPE: add grass effect (perlin noise?).
 const GLchar *sample_fs = "#version 330\n"
   "uniform ivec2 u_res;\n"
   //"uniform mat4 imvp;\n"
@@ -386,9 +381,9 @@ int main() { sf::ContextSettings settings;
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
-                                ,EX_STEP,EX_NSTEPS,true),
+                                ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
                            einit(no_react,grass_blade(0.25,0.5,1,0,0),v3(0.1,0,0.1)
-                                ,0,2,false) });
+                                ,0,1,4,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
 
