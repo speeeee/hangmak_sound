@@ -1,3 +1,5 @@
+#ifndef MATRIX_HPP
+#define MATRIX_HPP
 #include "world.hpp"
 
 // written in row-major order, so transposition is required.
@@ -7,6 +9,8 @@ typedef struct { std::vector<float> dat; int r; int c; } Matrix;
 Matrix matrix(std::vector<float>, int, int);
 // 0x0 identity matrix represents error.
 Matrix id_mat(int);
+Matrix vec3_to_mat(Vec3);
+Vec3 mat_to_vec3(Matrix);
 
 Matrix madd(Matrix, Matrix);
 Matrix operator+(Matrix, Matrix);
@@ -19,6 +23,7 @@ float dot_in_mat(float *, float *, int, int);
 // assumes AxB * BxC
 Matrix mmul(Matrix, Matrix);
 Matrix operator*(Matrix, Matrix);
+Matrix operator*(Matrix, Vec3);
 
 Matrix mtrunc(Matrix);
 
@@ -45,3 +50,4 @@ void lu_decomp(Matrix, Matrix *, Matrix *);
 
 // TODO: inverse 4x4 matrix.
 Matrix minvert(Matrix);
+#endif

@@ -6,6 +6,9 @@ Matrix matrix(std::vector<float> dat, int r, int c) { return (Matrix) { dat, r, 
 Matrix id_mat(int sz) { Matrix a; a.r = a.c = sz;
   std::vector<float> dat(sz*sz,0.); for(int i=0;i<sz*sz;i+=sz+1) { dat[i] = 1; }
   a.dat = dat; return a; }
+Matrix vec3_to_mat(Vec3 v, float w) { Matrix a; a.r = 4; a.c = 1; std::vector<float> dat(a.r*a.c,0.);
+  dat[0] = v.x; dat[1] = v.y; dat[2] = v.z; dat[3] = w; a.dat = dat; return a; }
+Vec3 mat_to_vec3(Matrix a) { return v3(a.dat[0],a.dat[1],a.dat[2]); }
 
 Matrix madd(Matrix a, Matrix b) { Matrix ret = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
   for(int i=0;i<b.r*b.c;i++) { ret.dat[i] = a.dat[i]+b.dat[i]; } return ret; }
@@ -28,6 +31,7 @@ Matrix mmul(Matrix a, Matrix b) { if(a.c!=b.r) { return id_mat(0); }
       dat[j+i*b.c] = dot_in_mat(&a.dat[i*a.c],&b.dat[j],a.r,b.c); } }
   ret.dat = dat; return ret; }
 Matrix operator*(Matrix a, Matrix b) { return mmul(a,b); }
+Matrix operator*(Matrix a, Vec3 b) { return mmul(a,vec3_to_mat(b,1)); }
 
 Matrix mtrunc(Matrix a) { Matrix b = matrix(std::vector<float>((a.r-1)*(a.c-1)),a.r-1,a.c-1);
   for(int i=0;i<b.r*b.c;i++) { b.dat[i] = a.dat[i+i/a.c]; } return b; }
