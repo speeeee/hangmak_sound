@@ -282,17 +282,22 @@ const GLchar *grass_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
   "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform int u_grass_id;\n"
-  "out mat4 frag_model;\n"
+  "out mat4 frag_model; float pi = 3.14159265358979;\n"
   "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
   "                                        +sin(4.*x)/8+cos(3.*x)/12+sin(3.*z)/8.\n"
   "                                        +cos(5.*z)/12; }\n"
+  "int n = 50; float interval = 0.02;\n"
+  "float random_disp_2(int instance_id) {"
+  "  return fract(sin(100000.*instance_id))*100000.; }\n"
+  "float random_disp(int instance_id, int grass_id) {\n"
+  "  return mod(int(random_disp_2(instance_id))^u_grass_id,5); }\n"
   // change n and interval to change amount of grass blades.
   //   n: amount of grass blades per row, amount of grass blades per column.
   //   interval: amount of space between each blade.
-  "int n = 50; float interval = 0.02;\n"
   "void main() {\n"
   "  frag_pos = position; frag_norm = norm;\n"
-  "  vec3 npos = vec3(position.x+mod(gl_InstanceID,n)*interval*5+u_grass_id*interval"
+  "  vec3 npos = vec3(position.x+mod(gl_InstanceID,n)*interval*5"
+  "                     +random_disp(gl_InstanceID,u_grass_id)*interval"
   "                  ,0,position.z+(gl_InstanceID/n)*interval);\n"
   "  npos.y = position.y+hole_0(npos.x,npos.z);\n"
   "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
@@ -396,6 +401,11 @@ void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
     axis = axis+v3(0,-1,0); }
   if(!(axis==v3(0,0,0))) { *model = rotate(*model,0.01,axis); }
 
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
+    *model = scale(*model,v3(1.01,1.01,1.01)); }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::U)) {
+    *model = scale(*model,v3(0.990099,0.990099,0.990099)); }
+
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::I)) {
     *view = translate(*view,v3(0,0,0.01)); }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::O)) {
@@ -416,17 +426,18 @@ int main() { sf::ContextSettings settings;
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
 
+  const float t0 = M_PI/10.; const float sz = 0.03;
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
                                 ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
-                           einit(no_react,grass_blade(0.05,0.1,2,0,M_PI/2),v3(0,0,0)
+                           einit(no_react,grass_blade(sz,0.1,2,0,M_PI/2),v3(0,0,0)
                                 ,0,1,5/* 2*detail+1 */,false),
-                           einit(no_react,grass_blade(0.05,0.1,2,M_PI/12.,M_PI/4.),v3(0,0,0)
+                           einit(no_react,grass_blade(sz,0.1,2,t0,M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false),
-                           einit(no_react,grass_blade(0.05,0.1,2,M_PI/12.,3*M_PI/4.),v3(0,0,0)
+                           einit(no_react,grass_blade(sz,0.1,2,t0,3*M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false),
-                           einit(no_react,grass_blade(0.05,0.1,2,M_PI/12.,5*M_PI/4.),v3(0,0,0)
+                           einit(no_react,grass_blade(sz,0.1,2,t0,5*M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false),
-                           einit(no_react,grass_blade(0.05,0.1,2,M_PI/12.,7*M_PI/4.),v3(0,0,0)
+                           einit(no_react,grass_blade(sz,0.1,2,t0,7*M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
