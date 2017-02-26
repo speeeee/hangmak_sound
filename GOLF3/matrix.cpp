@@ -67,6 +67,10 @@ Matrix transpose(Matrix a) { std::vector<float> dat(a.r*a.c,0.);
   for(int j=0;j<a.c;j++) { for(int i=0;i<a.r;i++) { dat[i+j*a.r] = a.dat[j+i*a.c]; } }
   return matrix(dat,a.c,a.r); }
 
+Matrix scale(Matrix a, Vec3 t) { std::vector<float> dat(a.r*a.c,0.);
+  dat[0] = t.x; dat[a.c+1] = t.y; dat[a.c*2+2] = t.z; dat[a.c*3+3] = 1;
+  return mmul(matrix(dat,4,4),a); }
+
 Matrix look_at(Vec3 eye, Vec3 t, Vec3 up) {
   Vec3 z = unit(vsub3(eye,t));
   Vec3 x = unit(cross(up,z));

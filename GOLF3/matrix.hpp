@@ -34,6 +34,7 @@ Matrix frustum_pers(float, float, float, float, float, float);
 Matrix translate(Matrix, Vec3);
 Matrix rotate(Matrix, float, Vec3);
 Matrix transpose(Matrix);
+Matrix scale(Matrix,Vec3);
 
 Matrix look_at(Vec3, Vec3, Vec3);
 
