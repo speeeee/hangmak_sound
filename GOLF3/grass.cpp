@@ -1,4 +1,5 @@
 #include "grass.hpp" 
+#include "matrix.hpp"
 
 // normally on XY plane.
 // t0 = rotation along (1,0,0), t1 = rotation along (0,1,0)
@@ -10,13 +11,17 @@ std::vector<float> grass_blade(float width, float height, int detail, float t0, 
   int total = (detail+1)*3*2*2;
   for(int i=0;i<total;i+=3*2*2) { int d = i/(3*2*2);
     float y = height/detail*d;
-    Vec3 ai = v3(-width/2.+y/slope,y,0); Vec3 bi = v3(width/2-y/slope,y,0);
+    // rotations here:
+    Matrix rot = id_mat(4); rot = rotate(rot,d*t1,v3(0,-1,0));
+    rot = rotate(rot,d*t0,v3(-1,0,0));
+    Vec3 ai = mat_to_vec3(rot*v3(-width/2.+y/slope,y,0));
+    Vec3 bi = mat_to_vec3(rot*v3(width/2-y/slope,y,0));
     Vec3 norm;
-    if(d%2) { Vec3 ci = v3(width/2.-height/detail*(d+1)/slope,height/detail*(d+1),0);
+    if(d%2) { Vec3 ci = mat_to_vec3(rot*v3(width/2.-height/detail*(d+1)/slope,height/detail*(d+1),0));
               norm = norm_positive(bi,ai,ci);
               ret[i] = ai.x; ret[i+1] = ai.y; ret[i+2] = ai.z;
               ret[i+6] = bi.x; ret[i+7] = bi.y; ret[i+8] = bi.z; }
-    else { Vec3 ci = v3(-width/2.+height/detail*(d+1)/slope,height/detail*(d+1),0);;
+    else { Vec3 ci = mat_to_vec3(rot*v3(-width/2.+height/detail*(d+1)/slope,height/detail*(d+1),0));
            norm = norm_positive(ai,bi,ci);
            ret[i] = bi.x; ret[i+1] = bi.y; ret[i+2] = bi.z;
            ret[i+6] = ai.x; ret[i+7] = ai.y; ret[i+8] = ai.z; }
