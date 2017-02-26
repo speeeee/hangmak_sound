@@ -278,9 +278,10 @@ const GLchar *sample_fs = "#version 330\n"
   "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
   "  gl_FragColor = vec4(color.rgb*brightness+0.2,1.); }\0";
 
+// TODO: add shading (1) and animation wrt wind (2).
 const GLchar *grass_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
-  "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
+  "layout (location = 1) in vec3 norm; out vec3 frag_norm; out vec3 frag_itra;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform int u_grass_id;\n"
   "out mat4 frag_model; float pi = 3.14159265358979;\n"
   "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
@@ -291,20 +292,37 @@ const GLchar *grass_vs = "#version 330\n"
   "  return fract(sin(100000.*instance_id))*100000.; }\n"
   "float random_disp(int instance_id, int grass_id) {\n"
   "  return mod(int(random_disp_2(instance_id))^u_grass_id,5); }\n"
+  "float curve_0(float x, float isz) {\n"
+  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
+  "bool in_curve(vec3 p, float mag) {\n"
+  "  return p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,mag)"
+  "                           &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./mag,2.))/mag; }\n"
   // change n and interval to change amount of grass blades.
   //   n: amount of grass blades per row, amount of grass blades per column.
   //   interval: amount of space between each blade.
+  // position: position in un-translated grass blade.
   "void main() {\n"
   "  frag_pos = position; frag_norm = norm;\n"
-  "  vec3 npos = vec3(position.x+mod(gl_InstanceID,n)*interval*5"
-  "                     +random_disp(gl_InstanceID,u_grass_id)*interval"
-  "                  ,0,position.z+(gl_InstanceID/n)*interval);\n"
-  "  npos.y = position.y+hole_0(npos.x,npos.z);\n"
+  "  vec3 p = position;\n"
+  "  vec3 itra = vec3(mod(gl_InstanceID,n)*interval*5+random_disp(gl_InstanceID,u_grass_id)*interval"
+  "                  ,0,gl_InstanceID/n*interval); frag_itra = itra;\n"
+  "  if(in_curve(itra,1.1)) { p.y = p.y*0.1; }\n"
+  "  else if(in_curve(itra,1.)) { p = p*0.5; }\n"
+  "  vec3 npos = p+itra;\n"
+  "  npos.y = p.y+hole_0(npos.x,npos.z);\n"
   "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
 const GLchar *grass_fs = "#version 330\n"
-  "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm;\n"
+  "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_itra;\n"
+  "float curve_0(float x, float isz) {\n"
+  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
+  "bool in_curve(vec3 p, float mag) {\n"
+  "  return p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,mag)"
+  "                           &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./mag,2.))/mag; }\n"
   "void main() {\n"
-  "  gl_FragColor = vec4(0.,frag_pos.y*7.5+0.3,0.2,1.); }\0"; 
+  "  vec3 color = vec3(0.,0.5,0.);\n"
+  "  if(in_curve(frag_itra,1.1)) { color.g = 0.9-ceil(mod(frag_itra.x,1.)-0.5)*0.1; }\n"
+  "  else if(in_curve(frag_itra,1.)) { color.g = 0.7; }\n"
+  "  gl_FragColor = vec4(color.xyz+frag_pos.y*5.,1.); }\0"; 
 
 GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
   vs = glCreateShader(GL_VERTEX_SHADER);
