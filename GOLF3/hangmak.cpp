@@ -13,6 +13,8 @@
 #include "matrix.hpp"
 #include "grass.hpp"
 
+#include "general_data.hpp"
+
 #define PI 3.14159265358979
 
 // TODO: implement draw function for instanced drawing.
@@ -224,9 +226,12 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
 // TODO: rewrite for circle drawing.  Translate circle based off of given uniform position vector.
 //     : rotate to always face camera.  Shade based off of global light.
 const GLchar *default_vs = "#version 330\n"
+  "layout (location = 0) in vec3 position;\n"
+  "layout (location = 1) in vec3 norm;\n"
+  "uniform vec3 pos;\n" // displacement from origin.
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
-  "void main() { gl_FrontColor = gl_Color;\n"
-  "gl_Position = projection*view*model*gl_Vertex; }\0";
+  "void main() {\n"
+  "gl_Position = projection*view*model*vec4(position.xyz+pos,1.); }\0";
 const GLchar *default_fs = "#version 330\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.9,1.); }\0";
 
@@ -379,7 +384,8 @@ void paint(World *w,GLuint default_program) {
     glUniform1i(u_grass_id,i);
     d_tri_instanced(w->e[i].vd,GL_TRIANGLE_STRIP,62500/5); }
   glUseProgram(default_program);
-  d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1); }
+  /*d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1);*/
+  d_triangulation_2(w->e[6].vd,GL_TRIANGLE_FAN); }
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
   glDepthFunc(GL_LESS);
@@ -456,7 +462,8 @@ int main() { sf::ContextSettings settings;
                            einit(no_react,grass_blade(sz,0.1,2,t0,5*M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false),
                            einit(no_react,grass_blade(sz,0.1,2,t0,7*M_PI/4.),v3(0,0,0)
-                                ,0,1,5,false) });
+                                ,0,1,5,false),
+                           einit(no_react,ball(0.05,20),v3(0,0,0),0,1,21,false) });
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
   w->e[1].shader_id = create_program(grass_vs,grass_fs);
@@ -474,6 +481,8 @@ int main() { sf::ContextSettings settings;
     handle_input(&model,&view,&projection);
     // TODO: optimize this so it does not reset every frame.
     mvp_set(default_program,model,view,projection);
+    GLint _pos = glGetUniformLocation(default_program,"pos");
+    glUniform3f(_pos,w->p.pos.x,w->p.pos.y,w->p.pos.z);
     mvp_set(w->e[0].shader_id,model,view,projection);
     mvp_set(w->e[1].shader_id,model,view,projection);
 
