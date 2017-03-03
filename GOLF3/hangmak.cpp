@@ -230,8 +230,8 @@ const GLchar *default_vs = "#version 330\n"
   "layout (location = 1) in vec3 norm;\n"
   "uniform vec3 pos;\n" // displacement from origin.
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
-  "void main() {\n"
-  "gl_Position = projection*view*model*vec4(position.xyz+pos,1.); }\0";
+  "void main() { vec3 npos = position;\n"
+  "  gl_Position = projection*view*model*vec4(npos.xyz+pos,1.); }\0";
 const GLchar *default_fs = "#version 330\n"
   "void main() { gl_FragColor = vec4(0.,1.,0.9,1.); }\0";
 
@@ -287,6 +287,7 @@ const GLchar *sample_fs = "#version 330\n"
 const GLchar *grass_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
   "layout (location = 1) in vec3 norm; out vec3 frag_norm; out vec3 frag_itra;\n"
+  "uniform int utime;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform int u_grass_id;\n"
   "out mat4 frag_model; float pi = 3.14159265358979;\n"
   "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
@@ -315,6 +316,9 @@ const GLchar *grass_vs = "#version 330\n"
   "  else if(in_curve(itra,1.)) { p = p*0.5; }\n"
   "  vec3 npos = p+itra;\n"
   "  npos.y = p.y+hole_0(npos.x,npos.z);\n"
+  // example of wind-animation:
+  "  vec3 wind = vec3(1.0,0.0,0.0);\n"
+  "  npos += wind*p.y*0.25*sin((utime/100.+itra.x)*0.);\n"
   "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
 const GLchar *grass_fs = "#version 330\n"
   "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_itra;\n"
@@ -444,11 +448,11 @@ int main() { sf::ContextSettings settings;
   glewInit();
 
   Matrix model = translate(id_mat(4),v3(-0.5,0,-1.0));
-  Matrix view = translate(id_mat(4),v3(0,0,-1.5));
+  Matrix view = translate(id_mat(4),v3(0,0,-5.5));
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
-  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,0.16),0.05);
+  w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,4.),0.05);
 
   const float t0 = M_PI/10.; const float sz = 0.03;
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
@@ -475,8 +479,8 @@ int main() { sf::ContextSettings settings;
   glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
   GLuint default_program = create_program(default_vs,default_fs);
-  mvp_set(default_program,model,view,projection);
-  for(bool r = true;r;) {
+  mvp_set(default_program,model,view,projection); int t = 0;
+  for(bool r = true;r;t++) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     handle_input(&model,&view,&projection);
     // TODO: optimize this so it does not reset every frame.
@@ -485,6 +489,8 @@ int main() { sf::ContextSettings settings;
     glUniform3f(_pos,w->p.pos.x,w->p.pos.y,w->p.pos.z);
     mvp_set(w->e[0].shader_id,model,view,projection);
     mvp_set(w->e[1].shader_id,model,view,projection);
+    GLint _time = glGetUniformLocation(w->e[1].shader_id,"utime");
+    glUniform1i(_time,t);
 
     Matrix model_3 = mtrunc(model);
     glUseProgram(w->e[0].shader_id);
