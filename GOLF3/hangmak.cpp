@@ -319,6 +319,7 @@ const GLchar *grass_vs = "#version 330\n"
   // example of wind-animation:
   "  vec3 wind = vec3(1.0,0.0,0.0);\n"
   "  npos += wind*p.y*0.25*sin((utime/100.+itra.x)*0.);\n"
+  "  npos.y += length(wind)*p.y*0.25*cos((utime/100.+itra.x)*0.);\n"
   "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
 const GLchar *grass_fs = "#version 330\n"
   "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_itra;\n"
