@@ -303,6 +303,10 @@ const GLchar *grass_vs = "#version 330\n"
   "bool in_curve(vec3 p, float mag) {\n"
   "  return p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,mag)"
   "                           &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./mag,2.))/mag; }\n"
+  "float wind_react_y(float v, float scale) {\n"
+  "  return scale*(sin(v)+cos(v/2.)+sin(v/2.-pi/4.)); }\n"
+  "float wind_react_xz(float v, float scale) {\n"
+  "  return scale*(cos(v)+sin(v/2.)+cos(v/2.+pi/4.)); }\n"
   // change n and interval to change amount of grass blades.
   //   n: amount of grass blades per row, amount of grass blades per column.
   //   interval: amount of space between each blade.
@@ -318,8 +322,8 @@ const GLchar *grass_vs = "#version 330\n"
   "  npos.y = p.y+hole_0(npos.x,npos.z);\n"
   // example of wind-animation:
   "  vec3 wind = vec3(1.0,0.0,0.0);\n"
-  "  npos += wind*p.y*0.25*sin((utime/100.+itra.x)*0.);\n"
-  "  npos.y += length(wind)*p.y*0.25*cos((utime/100.+itra.x)*0.);\n"
+  "  npos += wind*p.y*0.25*wind_react_xz(utime/30.+itra.x,1.);\n" // scale=10. looks interesting.
+  "  npos.y += length(wind)*p.y*0.25*wind_react_y(utime/30.+itra.x,1.);\n"
   "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
 const GLchar *grass_fs = "#version 330\n"
   "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_itra;\n"
