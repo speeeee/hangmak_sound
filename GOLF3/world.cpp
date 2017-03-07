@@ -26,6 +26,7 @@ Vec2 proj_xz(Vec3 a) { return v2(a.x,a.z); }
 
 Vec3 vcmul(Vec3 a, Vec3 b) { return v3(a.x*b.x,a.y*b.y,a.z*b.z); }
 Vec3 vsmul(float a, Vec3 b) { return v3(a*b.x,a*b.y,a*b.z); }
+Vec3 operator*(float a, Vec3 b) { return vsmul(a,b); }
 
 Vec3 vneg(Vec3 a) { return v3(-a.x,-a.y,-a.z); }
 

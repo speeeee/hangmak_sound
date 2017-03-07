@@ -38,6 +38,7 @@ Vec2 proj_xz(Vec3);
 Vec3 vcmul(Vec3, Vec3);
 // multiplies vector by scalar.
 Vec3 vsmul(float, Vec3);
+Vec3 operator*(float, Vec3);
 
 // negate components of vector
 Vec3 vneg(Vec3);
@@ -75,7 +76,8 @@ Triangle center_right(Triangle, Vec3, Vec3, Vec3);
 
 typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
-                 std::vector<Entity> e; /* tile for processing. */ } World;
+                 std::vector<Entity> e; /* tile for processing. */
+                 float tht; float phi; } World;
 
 typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
