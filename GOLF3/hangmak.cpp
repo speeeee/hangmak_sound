@@ -421,7 +421,7 @@ Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRU
          .
 */
 
-void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
+void handle_input(World *w, Matrix *model, Matrix *view, Matrix *projection) {
   // TODO: make cleaner code.
   Vec3 axis = v3(0,0,0);
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
@@ -442,7 +442,17 @@ void handle_input(Matrix *model, Matrix *view, Matrix *projection) {
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::I)) {
     *view = translate(*view,v3(0,0,0.01)); }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::O)) {
-    *view = translate(*view,v3(0,0,-0.01)); } }
+    *view = translate(*view,v3(0,0,-0.01)); }
+
+  // TODO: make nicer.
+  // TODO: change so it is only possible to add velocity if total velocity is below threshold.
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::A)) { w->tht += M_PI/100.; }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)) { w->tht -= M_PI/100.; }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::S)) { w->phi += M_PI/100.; }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) { w->phi -= M_PI/100.; }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+    Vec3 v = unit(v3(cos(w->tht)*cos(w->phi),sin(w->phi),sin(w->tht)*cos(w->phi)));
+    w->p.vel = w->p.vel+1./100.*v; } }
 
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
@@ -458,6 +468,7 @@ int main() { sf::ContextSettings settings;
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,4.),0.05);
+  w->tht = 0; w->phi = 0;
 
   const float t0 = M_PI/10.; const float sz = 0.03;
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
@@ -487,7 +498,7 @@ int main() { sf::ContextSettings settings;
   mvp_set(default_program,model,view,projection); int t = 0;
   for(bool r = true;r;t++) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
-    handle_input(&model,&view,&projection);
+    handle_input(w,&model,&view,&projection);
     // TODO: optimize this so it does not reset every frame.
     mvp_set(default_program,model,view,projection);
     GLint _pos = glGetUniformLocation(default_program,"pos");
