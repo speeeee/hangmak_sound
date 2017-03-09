@@ -445,14 +445,14 @@ void handle_input(World *w, Matrix *model, Matrix *view, Matrix *projection) {
     *view = translate(*view,v3(0,0,-0.01)); }
 
   // TODO: make nicer.
-  // TODO: change so it is only possible to add velocity if total velocity is below threshold.
+  // DONE: change so it is only possible to add velocity if total velocity is below threshold.
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::A)) { w->tht += M_PI/100.; }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)) { w->tht -= M_PI/100.; }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::S)) { w->phi += M_PI/100.; }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) { w->phi -= M_PI/100.; }
-  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)&&len(w->p.vel)<0.0005) {
     Vec3 v = unit(v3(cos(w->tht)*cos(w->phi),sin(w->phi),sin(w->tht)*cos(w->phi)));
-    w->p.vel = w->p.vel+1./100.*v; } }
+    w->p.vel = w->p.vel+1./25.*v; w->stroke++; } }
 
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
@@ -468,7 +468,7 @@ int main() { sf::ContextSettings settings;
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,4.),0.05);
-  w->tht = 0; w->phi = 0;
+  w->stroke = 1; w->tht = 0; w->phi = 0;
 
   const float t0 = M_PI/10.; const float sz = 0.03;
   w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)

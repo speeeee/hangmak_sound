@@ -77,7 +77,7 @@ Triangle center_right(Triangle, Vec3, Vec3, Vec3);
 typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
                  std::vector<Entity> e; /* tile for processing. */
-                 float tht; float phi; } World;
+                 int stroke; float tht; float phi; } World;
 
 typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
