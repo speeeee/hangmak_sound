@@ -36,8 +36,13 @@ int sign(float a) { return (a>0)-(a<0); }
 // TODO: add buffer zone to account for floating-point error. (the point could be calculated wrong
 //     : when on the plane at a certain state.
 int pl_side(Vec3 s1, Vec3 s2, Triangle a) {
-  float r1 = sign(dist_pt_plane(s1,a)); float r2 = sign(dist_pt_plane(s2,a));
+  int r1 = sign(dist_pt_plane(s1,a)); int r2 = sign(dist_pt_plane(s2,a));
   return !r1||!r2||!(r1+r2); }
 int pl_side_ball(Projectile p1, Projectile p2, Triangle a) {
-  float r1 = sign(dist_ball_plane(p1,a)); float r2 = sign(dist_ball_plane(p2,a));
+  int r1 = sign(dist_ball_plane(p1,a)); int r2 = sign(dist_ball_plane(p2,a));
   return !r1||!r2||!(r1+r2); }
+
+// tests if distance is negative.
+int pl_side_ball_low(Projectile p1, Projectile p2, Triangle a) {
+  int r1 = sign(dist_ball_plane(p1,a)); int r2 = sign(dist_ball_plane(p2,a));
+  return !r1||!r2||(r1+r2)<1; }

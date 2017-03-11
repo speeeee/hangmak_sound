@@ -514,5 +514,5 @@ int main() { sf::ContextSettings settings;
     Matrix imod = minvert(model_3);
     glUniformMatrix4fv(_imod,1,GL_TRUE,&imod.dat[0]);
     paint(w,default_program); Projectile pp = next_state(w->p);
-    /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp);
+    /*printf("<%g,%g,%g>\n",w->p.pos.x,w->p.pos.y,w->p.pos.z);*/ entity_collide(w,pp,pl_side_ball_low);
     window.display(); } glDeleteVertexArrays(1,&w->e[0].vd.vao); return 0; }

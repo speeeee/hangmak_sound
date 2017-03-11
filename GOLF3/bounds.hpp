@@ -26,9 +26,11 @@ int in_triangle(Vec2, Triangle);
 //   Hesse normal form. (distance can be negative)
 float dist_pt_plane(Vec3, Triangle);
 
+typedef std::function<bool(Projectile, Projectile, Triangle)> BoundsCompare;
 // tests if two 3D-vector states s1 and s2 are on opposing sides of plane parallel to triangle a.
 // TODO: add buffer zone to account for floating-point error. (the point could be calculated wrong
 //     : when on the plane at a certain state.
 int pl_side(Vec3, Vec3, Triangle);
 int pl_side_ball(Projectile, Projectile, Triangle);
+int pl_side_ball_low(Projectile, Projectile, Triangle);
 #endif
