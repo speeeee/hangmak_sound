@@ -1,7 +1,4 @@
-#define GLEW_STATIC
-#include <GL/glew.h>
 #include <SFML/Graphics.hpp>
-#include <SFML/OpenGL.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -11,11 +8,11 @@
 #include "bounds.hpp"
 #include "physics.hpp"
 #include "matrix.hpp"
-#include "grass.hpp"
-
-#include "general_data.hpp"
+#include "loader.hpp"
 
 #define PI 3.14159265358979
+
+#define DEBUG_MODE 1
 
 // TODO: implement draw function for instanced drawing.
 // NOTE: current number of rows and columns of grass blades is n = 100.
@@ -52,15 +49,10 @@ int curr_id = 0;
 
 #define EX_STEP (0.02)
 #define EX_NSTEPS (250)
-typedef std::function<float(float, float)> FuncXZ;
 float ex_fun(float x, float z) { return sin(5.0*x)/5.0+sin(5.0*z)/5.0; }
 float ex_fun_1(float x, float z) { return cos(5.0*x)/5.0+cos(5.0*z)/5.0; }
 float ex_fun_2(float x, float z) { return pow(x-0.5,2.)+pow(z-0.5,2.); }
-float hole_0(float x, float z) { return 1./(2*(1+exp(-5*(-(z-3+pow(x-3.8,2.)/2.)))))
-                                        +sin(4*x)/8+cos(3*x)/12+sin(3*z)/8
-                                        +cos(5*z)/12; }
 int ex_bounds(Vec2 a) { dist(a,v2(0.5,0.5))<0.5; }
-int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<5.0&&a.z>0&&a.z<5.0; }
 
 // DONE: add bounds function for each entity so not all entities' triangles are calculated.
 
@@ -101,270 +93,6 @@ std::vector<float> triangulate_1(FuncXZ f, float step, int nsteps) { int tsz;
                                           ,ret[ind+5]);*/ } }
   for(int i=0;i<102;i++) { printf("%g, ",ret[i]); }
   return ret; }
-// TODO: needs significant refactoring.
-std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
-  // every step has two points for drawing, both on the same x-coordinate.
-  // six total floats for each step.  this is doubled for all associated normals.
-  int floats_per_vert = 3;
-  // one group is, in this case, the two vertices whose line is parallel to z-axis.
-  //   e.g. |||||| : two vertices per line.
-  int verts_per_group = 2;
-  int n_attribs       = 2;
-
-  // attributes per vertex * floats_per_vert
-  int apv = floats_per_vert*n_attribs; // = 6
-
-  // floats_per_group
-  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
-
-  std::vector<float> ret((tsz = nsteps*nsteps)*fpg);
-  for(int i=0;i<nsteps;i++) { int d = i*nsteps*fpg;
-    // first triangle case:
-    ret[d] = 0; ret[d+1] = f(0,i*step); ret[d+2] = i*step;
-    ret[d+6] = 0; ret[d+7] = f(0,i*step+step); ret[d+8] = i*step+step;
-    ret[d+12] = step; ret[d+13] = f(step,i*step); ret[d+14] = i*step;
-    Vec3 a = arr_to_vec(&ret[d]); Vec3 b = arr_to_vec(&ret[d+6]); Vec3 c = arr_to_vec(&ret[d+12]);
-    Vec3 norm = unit(cross(b-a,c-a));
-    ret[d+3] = norm.x; ret[d+4] = norm.y; ret[d+5] = norm.z;
-    ret[d+9] = norm.x; ret[d+10] = norm.y; ret[d+11] = norm.z;
-    ret[d+15] = norm.x; ret[d+16] = norm.y; ret[d+17] = norm.z;
-    // TODO: possible error in third triangle.
-    for(int j=apv*3;j<nsteps*fpg;j+=apv) { int ind = j+d;
-      if((j/apv)%2) { ret[ind+1] = f(j/fpg*step,i*step+step); ret[ind+2] = i*step+step; }
-      else { ret[ind+1] = f(j/fpg*step,i*step); ret[ind+2] = i*step; }
-      ret[ind] = j/fpg*step;
-
-      Vec3 a = arr_to_vec(&ret[ind]); Vec3 b = arr_to_vec(&ret[ind-apv]);
-      Vec3 c = arr_to_vec(&ret[ind-apv*2]);
-      /*Vec3 v0 = b-a; Vec3 v1 = c-a;
-      if((j/apv)%2) { v0.x = -v0.x; v0.z = -v0.z; v0.y = -v0.y;
-                      v1.x = -v1.x; v1.z = -v1.z; v1.y = -v1.y; }
-      else { v0.x = -v0.x; v0.y = -v0.y;
-             v1.x = -v1.x; v1.y = -v1.y; }
-      norm = unit(cross(v0,v1));*/
-      if((j/apv)%2) { norm = norm_positive(a,b,c); } else { norm = norm_positive(c,b,a); }
-      ret[ind+3] = norm.x; ret[ind+4] = norm.y; ret[ind+5] = norm.z; } }
-  return ret; }
-// TODO: dedicated x-step and y-step.
-std::vector<Triangle> to_triangles(std::vector<float> arr, float step) {
-  int floats_per_vert = 3;
-  // one group is, in this case, the two vertices whose line is parallel to z-axis.
-  //   e.g. |||||| : two vertices per line.
-  int verts_per_group = 2;
-  int n_attribs       = 2;
-
-  // attributes per vertex * floats_per_vert
-  int apv = floats_per_vert*n_attribs; // = 6
-
-  // floats_per_group
-  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
-
-  std::vector<Triangle> ret;
-  for(int i=0;i<arr.size();i+=fpg) { Triangle a, b;
-    a.a = v2(0,0); a.b = v2(0,step); a.c = v2(step,0);
-    b.a = v2(step,step); b.b = v2(step,0); b.c = v2(0,step);
-
-    Vec3 bl = arr_to_vec(&arr[i]); Vec3 br = arr_to_vec(&arr[i+apv*2]);
-    Vec3 tr = arr_to_vec(&arr[i+apv*3]); Vec3 tl = arr_to_vec(&arr[i+apv*1]);
-
-    // TODO: chage the normal vector calculation since it is already stored now.
-    a.norm = unit(cross(vsub3(tl,bl),vsub3(tr,bl)));
-    b.norm = unit(vneg(cross(vsub3(tl,tr),vsub3(br,tr))));
-    a.pos = bl; b.pos = tr;
-    // expects leg on x-axis first, and then leg on z-axis.
-    ret.push_back(a);
-    ret.push_back(b); }
-  /*for(int i=0;i<ret.size();i++) {
-    printf("%i: <%g, %g, %g> <%g, %g, %g>\n",i,ret[i].pos.x,ret[i].pos.y,ret[i].pos.z
-          ,ret[i].norm.x,ret[i].norm.y,ret[i].norm.z); }*/ return ret; }
-
-// vector of buffers for bounds of entities.  deleted at end of program run.
-std::vector<GLuint> bufs;
-
-// DONE: create_entities: store entities created into single VAO at different displacements.
-//     : struct VAOdat { int disp; int sz; GLuint vao; };
-// DONE: change to not force function-based render.
-// TODO: change EntInit to <CollisionF,std::vector<float>>.  direct to triangulate.
-//typedef std::tuple<CollisionF,FuncXZ,Vec3,float,int> EntInit;
-//EntInit einit(CollisionF cf, FuncXZ f, Vec3 pos, float step, int nsteps) {
-//  return std::make_tuple(cf,f,pos,step,nsteps); }
-// DONE: create VAOdat for given input.
-std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entity> ret;
-  // assumes stride of 6 currently.
-  std::vector<float> dat;
-  GLuint vao; glGenVertexArrays(1,&vao);
-  for(int i=0;i<ei.size();i++) {
-    CollisionF cf = std::get<0>(ei[i]); std::vector<float> tris = std::get<1>(ei[i]);
-    Vec3 pos = std::get<2>(ei[i]); float step = std::get<3>(ei[i]); int nsteps = std::get<4>(ei[i]);
-
-    std::vector<Triangle> btris;
-    if(std::get<6>(ei[i])) { btris = to_triangles(tris,step); }
-    asadd(pos,&tris[0],tris.size(),6); // for stride.
-
-    // calculation for vaod.pos is dat.size()/stride
-    //   (dat.size() is guaranteed to be a multiple of stride).
-    ret.push_back(entity(pos,btris,tris,vao_dat(dat.size()/6,nsteps,std::get<5>(ei[i]),vao)
-                        ,ex_bounds_2,cf,std::get<5>(ei[i]),0));
-    /* append to dat vector tris */
-    dat.reserve(dat.size()+tris.size());
-    dat.insert(dat.end(),tris.begin(),tris.end()); }
-  glBindVertexArray(vao);
-  GLuint buf; glGenBuffers(1,&buf);
-  glBindBuffer(GL_ARRAY_BUFFER, buf);
-  glBufferData(GL_ARRAY_BUFFER,dat.size()*sizeof(float),&dat[0],GL_STATIC_DRAW);
-  // assume limit is 16.
-  GLuint pos_attrib = 0; GLuint norm_attrib = 1;
-  glEnableVertexAttribArray(pos_attrib); // attribute location, e.g. (location = 0) for position.
-  glVertexAttribPointer(pos_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT),0); // reminder: first argument requires
-                                                    //   glBindAttribLocation(..).
-  glEnableVertexAttribArray(norm_attrib);
-  glVertexAttribPointer(norm_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT)
-                       ,(const GLvoid *)(3*sizeof(GL_FLOAT)));
-
-  return ret; }
-
-// TODO: rewrite for circle drawing.  Translate circle based off of given uniform position vector.
-//     : rotate to always face camera.  Shade based off of global light.
-const GLchar *default_vs = "#version 330\n"
-  "layout (location = 0) in vec3 position;\n"
-  "layout (location = 1) in vec3 norm;\n"
-  "uniform vec3 pos;\n" // displacement from origin.
-  "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
-  "void main() { vec3 npos = position;\n"
-  "  gl_Position = projection*view*model*vec4(npos.xyz+pos,1.); }\0";
-const GLchar *default_fs = "#version 330\n"
-  "void main() { gl_FragColor = vec4(0.,1.,0.9,1.); }\0";
-
-// DONE: put MVP and inverse-P in fragment shader for computing eye-position.
-// NOTE: in glVertexAttribPointer: first argument is the attribute (set position = 0).
-const GLchar *sample_vs = "#version 330\n"
-  "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
-  "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
-  "uniform mat4 model; uniform mat4 view; uniform mat4 projection;\n"
-  "out mat4 frag_model;\n"
-  "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
-  "void main() {\n"
-  "  frag_pos = position; frag_norm = norm;\n"
-  "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
-/* DONE: add normals for each vertex to triangulate, scaling stride to 3*sizeof(GLfloat),
-   *       array is now made to fit the normal vectors, but the normal is not created yet.
-       : pass normals to vertex shader as (location = 1) and forward to fragment shader,
-       : perform lighting calculations. */
-/* CHANGES SO FAR:
-     add input vector 'norm' where (location = 1) (through glBindAttribLocation)
-     'norm' must be enabled and have been assigned by glVertexAttribPointer.
-   DONE* move location binding and attrib pointer assignment to isolated function. */
-
-// TODO: add first course with shader for the bounds of each type of terrain.
-// NOPE: add grass effect (perlin noise?).
-const GLchar *sample_fs = "#version 330\n"
-  "uniform ivec2 u_res;\n"
-  //"uniform mat4 imvp;\n"
-  "uniform mat3 u_imod;\n"
-  "in mat4 frag_model;\n"
-  "in vec3 frag_pos; in vec3 frag_norm;\n"
-  /*"void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
-  "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
-  "              (gl_DepthRange.far - gl_DepthRange.near);\n"
-  "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
-  "  vec4 pos = imvp*clip_pos;\n"*/
-  // as isz grows, the curve gets smaller.
-  "float curve_0(float x, float isz) {\n"
-  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
-  "void main() {\n"
-  "  vec3 light = normalize(vec3(0.,-1.,-.05));\n" // example light (0,-1,0)
-  "  float brightness = dot(-light,frag_norm);\n"
-  "  vec3 color = vec3(0.,0.,0.); vec3 p = frag_pos;\n"
-  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.)"
-  "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/4.)) {\n"
-  "    color.g = 0.7; } else { color.g = 0.5; }\n"
-  "  if(p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,1.1)"
-  "                       &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./1.1,2))/1.1) {\n"
-  "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
-  "  gl_FragColor = vec4(color.rgb*brightness+0.2,1.); }\0";
-
-// TODO: add shading (1) and animation wrt wind (2).
-const GLchar *grass_vs = "#version 330\n"
-  "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
-  "layout (location = 1) in vec3 norm; out vec3 frag_norm; out vec3 frag_itra;\n"
-  "uniform int utime;\n"
-  "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform int u_grass_id;\n"
-  "out mat4 frag_model; float pi = 3.14159265358979;\n"
-  "float hole_0(float x, float z) { return 1./(2.*(1.+exp(-5.*(-(z-3.+pow(x-3.8,2.)/2.)))))\n"
-  "                                        +sin(4.*x)/8+cos(3.*x)/12+sin(3.*z)/8.\n"
-  "                                        +cos(5.*z)/12; }\n"
-  "int n = 50; float interval = 0.02;\n"
-  "float random_disp_2(int instance_id) {"
-  "  return fract(sin(100000.*instance_id))*100000.; }\n"
-  "float random_disp(int instance_id, int grass_id) {\n"
-  "  return mod(int(random_disp_2(instance_id))^u_grass_id,5); }\n"
-  "float curve_0(float x, float isz) {\n"
-  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
-  "bool in_curve(vec3 p, float mag) {\n"
-  "  return p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,mag)"
-  "                           &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./mag,2.))/mag; }\n"
-  "float wind_react_y(float v, float scale) {\n"
-  "  return scale*(sin(v)+cos(v/2.)+sin(v/2.-pi/4.)); }\n"
-  "float wind_react_xz(float v, float scale) {\n"
-  "  return scale*(cos(v)+sin(v/2.)+cos(v/2.+pi/4.)); }\n"
-  // change n and interval to change amount of grass blades.
-  //   n: amount of grass blades per row, amount of grass blades per column.
-  //   interval: amount of space between each blade.
-  // position: position in un-translated grass blade.
-  "void main() {\n"
-  "  frag_pos = position; frag_norm = norm;\n"
-  "  vec3 p = position;\n"
-  "  vec3 itra = vec3(mod(gl_InstanceID,n)*interval*5+random_disp(gl_InstanceID,u_grass_id)*interval"
-  "                  ,0,gl_InstanceID/n*interval); frag_itra = itra;\n"
-  "  if(in_curve(itra,1.1)) { p.y = p.y*0.1; }\n"
-  "  else if(in_curve(itra,1.)) { p = p*0.5; }\n"
-  "  vec3 npos = p+itra;\n"
-  "  npos.y = p.y+hole_0(npos.x,npos.z);\n"
-  // example of wind-animation:
-  "  vec3 wind = vec3(1.0,0.0,0.0);\n"
-  "  npos += wind*p.y*0.25*wind_react_xz(utime/30.+itra.x,1.);\n" // scale=10. looks interesting.
-  "  npos.y += length(wind)*p.y*0.25*wind_react_y(utime/30.+itra.x,1.);\n"
-  "  gl_Position = projection*view*model*vec4(npos.xyz,1.0); }\0";
-const GLchar *grass_fs = "#version 330\n"
-  "in mat4 frag_model; in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_itra;\n"
-  "float curve_0(float x, float isz) {\n"
-  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
-  "bool in_curve(vec3 p, float mag) {\n"
-  "  return p.x>=0.5&&p.x<=4.5&&4.-p.z<=curve_0(p.x-2.5,mag)"
-  "                           &&4.-p.z>=-sqrt(1.-pow(p.x-2.5,2.)/pow(2./mag,2.))/mag; }\n"
-  "void main() {\n"
-  "  vec3 color = vec3(0.,0.5,0.);\n"
-  "  if(in_curve(frag_itra,1.1)) { color.g = 0.9-ceil(mod(frag_itra.x,1.)-0.5)*0.1; }\n"
-  "  else if(in_curve(frag_itra,1.)) { color.g = 0.7; }\n"
-  "  gl_FragColor = vec4(color.xyz+frag_pos.y*5.,1.); }\0"; 
-
-GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
-  vs = glCreateShader(GL_VERTEX_SHADER);
-
-  glShaderSource(vs,1,&vsh,NULL); glCompileShader(vs);
-  
-  GLint compiled = 0;
-  glGetShaderiv(vs,GL_COMPILE_STATUS,&compiled);
-  if(!compiled) { printf("Vertex error:\n"); GLint mlen = 0;
-    glGetShaderiv(vs,GL_INFO_LOG_LENGTH, &mlen);
-    std::vector<GLchar> error_log(mlen);
-    glGetShaderInfoLog(vs,mlen,&mlen,&error_log[0]);
-    glDeleteShader(vs); printf("%s\n",&error_log[0]); }
-  GLuint fs; fs = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fs,1,&fsh,NULL); glCompileShader(fs);
-  compiled = 0;
-  glGetShaderiv(fs,GL_COMPILE_STATUS,&compiled);
-  if(!compiled) { printf("Fragment error:\n"); GLint mlen = 0;
-    glGetShaderiv(fs,GL_INFO_LOG_LENGTH, &mlen);
-    std::vector<GLchar> error_log(mlen);
-    glGetShaderInfoLog(fs,mlen,&mlen,&error_log[0]);
-    glDeleteShader(fs); printf("%s\n",&error_log[0]); }
-
-  GLuint prog; prog = glCreateProgram();
-  glAttachShader(prog,vs); glAttachShader(prog,fs);
-  /*glBindAttribLocation(prog,0,"position");
-  glBindAttribLocation(prog,1,"norm");*/ glLinkProgram(prog);
-  glDeleteShader(vs); glDeleteShader(fs); return prog; }
 
 // expects model, view, and projection matrices to be named 'model', 'view', and 'projection'
 //   in the shader.
@@ -452,8 +180,13 @@ void handle_input(World *w, Matrix *model, Matrix *view, Matrix *projection) {
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) { w->phi -= M_PI/100.; }
   if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)&&len(w->p.vel)<0.0005) {
     Vec3 v = unit(v3(cos(w->tht)*cos(w->phi),sin(w->phi),sin(w->tht)*cos(w->phi)));
-    w->p.vel = w->p.vel+1./25.*v; w->stroke++; } }
+    w->p.vel = w->p.vel+1./25.*v; w->stroke++; }
+  // TODO: add buffer between inputs so hole is not incremented every frame. 
+  if(DEBUG_MODE&&sf::Keyboard::isKeyPressed(sf::Keyboard::N)) { unload(w,w->hole); load(w,++w->hole); }
+  else if(DEBUG_MODE&&sf::Keyboard::isKeyPressed(sf::Keyboard::B)) {
+    unload(w,w->hole); load(w,--w->hole); } }
 
+// TODO: allow loading and unloading levels and reorganize program to make that more easily done.
 int main() { sf::ContextSettings settings;
   settings.depthBits = 24; settings.stencilBits = 8; settings.antialiasingLevel = 0;
   settings.majorVersion = 3; settings.minorVersion = 3;
@@ -467,14 +200,15 @@ int main() { sf::ContextSettings settings;
   //Matrix view = look_at(v3(0,0,-1),v3(0,0,0),v3(0,1,0));
 
   World *w = new World(); //w->t.push_back(triangle(0,0,v3(0.5,0.5,0)));
+  w->hole = 0;
   w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,4.),0.05);
   w->stroke = 1; w->tht = 0; w->phi = 0;
 
   const float t0 = M_PI/10.; const float sz = 0.03;
-  w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
+  /*w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
                                 ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
                            einit(no_react,grass_blade(sz,0.1,2,0,M_PI/2),v3(0,0,0)
-                                ,0,1,5/* 2*detail+1 */,false),
+                                ,0,1,52*detail+1,false),
                            einit(no_react,grass_blade(sz,0.1,2,t0,M_PI/4.),v3(0,0,0)
                                 ,0,1,5,false),
                            einit(no_react,grass_blade(sz,0.1,2,t0,3*M_PI/4.),v3(0,0,0)
@@ -487,7 +221,8 @@ int main() { sf::ContextSettings settings;
   // DONE: put all of this in new construction function.
   w->e[0].shader_id = create_program(sample_vs,sample_fs);
   w->e[1].shader_id = create_program(grass_vs,grass_fs);
-  for(int i=2;i<6;i++) { w->e[i].shader_id = w->e[1].shader_id; }
+  for(int i=2;i<6;i++) { w->e[i].shader_id = w->e[1].shader_id; }*/
+  load(w,0);
 
   mvp_set(w->e[0].shader_id,model,view,projection);
   mvp_set(w->e[1].shader_id,model,view,projection);
@@ -495,7 +230,8 @@ int main() { sf::ContextSettings settings;
   glUniform2i(u_res,window.getSize().x,window.getSize().y);
 
   GLuint default_program = create_program(default_vs,default_fs);
-  mvp_set(default_program,model,view,projection); int t = 0;
+  mvp_set(default_program,model,view,projection);
+  int t = 0;
   for(bool r = true;r;t++) {
     sf::Event e; while(window.pollEvent(e)) { if(e.type==sf::Event::Closed) { r = false; } }
     handle_input(w,&model,&view,&projection);
