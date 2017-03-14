@@ -1,4 +1,7 @@
+#ifndef PHYSICS_HPP
+#define PHYSICS_HPP
 #include "world.hpp"
+#include "bounds.hpp"
 
 #include <memory>
 // uses Projectile.
@@ -16,3 +19,4 @@ void test_collide(World *, Projectile, CollisionF, BoundsCompare);
 void entity_collide(World *, Projectile, BoundsCompare);
 Projectile rigid_elastic(World *, Projectile, Triangle, Projectile);
 Projectile no_react(World *, Projectile, Triangle, Projectile);
+#endif

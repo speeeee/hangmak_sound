@@ -1,10 +1,12 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <SFML/OpenGL.hpp>
+
 #include <vector>
 #include <memory>
-
-#include <SFML/OpenGL.hpp>
 
 #define GRAVITY (-0.0005)
 #define DEGRADE (0.6)
@@ -77,8 +79,10 @@ Triangle center_right(Triangle, Vec3, Vec3, Vec3);
 typedef struct Entity Entity;
 typedef struct { Projectile p; // main 'ball' that is controlled.
                  std::vector<Entity> e; /* tile for processing. */
-                 int stroke; float tht; float phi; } World;
+                 int stroke; float tht; float phi;
+                 int hole; } World;
 
+typedef std::function<float(float, float)> FuncXZ;
 typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
 
