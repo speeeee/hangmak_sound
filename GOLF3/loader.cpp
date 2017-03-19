@@ -50,8 +50,12 @@ void load(World *w, int hole) { switch(hole) {
   // DONE: put all of this in new construction function.
     w->e[0].shader_id = create_program(sample_vs,sample_fs);
     w->e[1].shader_id = create_program(grass_vs,grass_fs);
-    for(int i=2;i<6;i++) { w->e[i].shader_id = w->e[1].shader_id; } } } }
-
+    for(int i=2;i<6;i++) { w->e[i].shader_id = w->e[1].shader_id; } break; }
+  case 1: { w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,0,0),0.05);
+    w->e = create_entities({ einit(no_react,cyl_to_tris(test_cyl_0,M_PI/50.,0.05,0,100,50),v3(0,0,0)
+                                  ,0,50,100*2,false),
+                             einit(no_react,ball(0.05,20),v3(0,0,0),0,1,21,false) });
+    w->e[0].shader_id = create_program(sample_vs,sample_fs); break; } } }
 
 void unload(World *w, int hole) { switch(hole) {
   case 0: { glDeleteVertexArrays(1,&w->e[0].vd.vao); } } }
