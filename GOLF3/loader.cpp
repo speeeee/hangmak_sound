@@ -32,6 +32,7 @@ GLuint create_program(const GLchar *vsh, const GLchar *fsh) { GLuint vs;
 void load(World *w, int hole) { switch(hole) {
   // TODO: lift triangulate to somewhere else.
   case 0: {
+    w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1,4.),0.05);
     const float t0 = M_PI/10.; const float sz = 0.03;
     w->e = create_entities({ einit(rigid_elastic,triangulate(hole_0,EX_STEP,EX_NSTEPS),v3(0,0,0)
                                   ,EX_STEP,EX_NSTEPS,EX_NSTEPS*2,true),
