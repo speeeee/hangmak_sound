@@ -123,11 +123,11 @@ void paint(World *w,GLuint default_program) {
         d_tri_instanced(w->e[i].vd,GL_TRIANGLE_STRIP,62500/5); }
       glUseProgram(default_program);
       /*d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1);*/
-      d_triangulation_2(w->e[6].vd,GL_TRIANGLE_FAN); }
+      d_triangulation_2(w->e[6].vd,GL_TRIANGLE_FAN); break; }
     case 1: { glUseProgram(w->e[0].shader_id);
       d_triangulation_2(w->e[0].vd,GL_TRIANGLE_STRIP);
       glUseProgram(w->e[1].shader_id);
-      d_triangulation_2(w->e[1].vd,GL_TRIANGLE_FAN); } } }
+      d_triangulation_2(w->e[1].vd,GL_TRIANGLE_FAN); break; } } }
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
   glDepthFunc(GL_LESS);
