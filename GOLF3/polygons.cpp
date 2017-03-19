@@ -7,6 +7,8 @@ int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<5.0&&a.z>0&&a.z<5.0; }
 float hole_0(float x, float z) { return 1./(2*(1+exp(-5*(-(z-3+pow(x-3.8,2.)/2.)))))
                                         +sin(4*x)/8+cos(3*x)/12+sin(3*z)/8
                                         +cos(5*z)/12; }
+float test_cyl_0(float tht, float y) { return 0.5; }
+
 // TODO: needs significant refactoring.
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
   // every step has two points for drawing, both on the same x-coordinate.
@@ -130,3 +132,34 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
 
   return ret; }
 
+// TODO: create compositional system where certain vertices can be removed on bounds check.
+//     : e.g. creating a model of penne pasta could be with small cylinders connected
+//     :   to each other to form a circle and clipping any points within the circle
+//     :   that crosses through the radii of the cylinders.
+/* ==== produce vector from cylindrical function f(theta,y) = r ==== */
+
+// ideally, tstep should be a factor of (ub-lb) (upper_bound-lower_bound).
+// TODO: add normals.
+std::vector<float> cyl_to_tris(FuncXZ cf, float tstep, float ystep, float lb, int tnsteps
+                              ,int height) {
+  // every step has two points for drawing, both on the same x-coordinate.
+  // six total floats for each step.  this is doubled for all associated normals.
+  int floats_per_vert = 3;
+  // one group is, in this case, the two vertices whose line is parallel to y-axis.
+  //   e.g. |||||| : two vertices per line.
+  int verts_per_group = 2;
+  int n_attribs       = 2;
+
+  // attributes per vertex * floats_per_vert
+  int apv = floats_per_vert*n_attribs; // = 6
+
+  // floats_per_group
+  int fpg = floats_per_vert*verts_per_group*n_attribs; // = 12.
+  std::vector<float> ret(tnsteps*height*fpg);
+
+  for(int j=0;j<height;j++) {
+    for(int ip=0;ip<tnsteps;ip++) { float c = lb+(float)(ip*tstep); int i = ip*fpg;
+      float r = cf(c,(float)(height*ystep)); float x = r*cos(c); float z = r*sin(c); 
+      ret[i] = ret[i+6] = x; ret[i+2] = ret[i+8] = z;
+      ret[i+1] = (float)(height*ystep); ret[i+7] = (float)(height*ystep*2); } }
+  return ret; }
