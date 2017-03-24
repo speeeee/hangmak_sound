@@ -7,7 +7,12 @@ int ex_bounds_2(Vec2 a) { return a.x>0&&a.x<5.0&&a.z>0&&a.z<5.0; }
 float hole_0(float x, float z) { return 1./(2*(1+exp(-5*(-(z-3+pow(x-3.8,2.)/2.)))))
                                         +sin(4*x)/8+cos(3*x)/12+sin(3*z)/8
                                         +cos(5*z)/12; }
-float test_cyl_0(float tht, float y) { return 0.5; }
+// divide into 30 circles
+#define CIRCLES 30
+float circ(float a, float x) { return pow(pow(a,2.)-pow(x,2.),0.5); }
+float test_cyl_0(float tht, float y) { /*return 0.05;*/
+  float a = 2*M_PI/CIRCLES;
+  return 0.5+circ(a,fmod(tht,a)-a/2.); }
 
 // TODO: needs significant refactoring.
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
@@ -163,3 +168,16 @@ std::vector<float> cyl_to_tris(FuncXZ cf, float tstep, float ystep, float lb, in
       ret[i] = ret[i+6] = x; ret[i+2] = ret[i+8] = z;
       ret[i+1] = (float)(height*ystep); ret[i+7] = (float)(height*ystep*2); } }
   return ret; }
+
+// ignore for now.
+std::vector<float> aappend(std::vector<float> a, std::vector<float> b, int stride) {
+  a.insert(a.end(),b.begin(),b.end()); }
+
+std::vector<float> c_ring(std::vector<float> a, float rad, float step, int nsteps) { std::vector<float> ret;
+  for(int i=0;i<nsteps;i++) { std::vector<float> b = a;
+    asadd(v3(rad*cos(step*i),0,rad*sin(step*i)),&b[0],b.size(),STRIDE);
+    aappend(ret,b,STRIDE); } return ret; }
+
+std::vector<float> c_clip(std::vector<float> a, float rad) {
+  for(int i=0;i<a.size();i+=6) { if(pow(pow(a[i],2.)+pow(a[i+2],2.),0.5)>rad) {
+    a.erase(a.begin()+i,a.begin()+i+5); } } return a; }

@@ -12,3 +12,7 @@ std::vector<Triangle> to_triangles(std::vector<float>, float);
 std::vector<Entity> create_entities(std::vector<EntBase>);
 // ideally, tstep should be a factor of (ub-lb) (upper_bound-lower_bound).
 std::vector<float> cyl_to_tris(FuncXZ, float, float, float, int, int);
+
+std::vector<float> aappend(std::vector<float>, std::vector<float>);
+std::vector<float> c_ring(std::vector<float>, float, float, int);
+std::vector<float> c_clip(std::vector<float>, float);
