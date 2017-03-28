@@ -166,7 +166,13 @@ std::vector<float> cyl_to_tris(FuncXZ cf, float tstep, float ystep, float lb, in
     for(int ip=0;ip<tnsteps;ip++) { float c = lb+(float)(ip*tstep); int i = ip*fpg;
       float r = cf(c,(float)(height*ystep)); float x = r*cos(c); float z = r*sin(c); 
       ret[i] = ret[i+6] = x; ret[i+2] = ret[i+8] = z;
-      ret[i+1] = (float)(height*ystep); ret[i+7] = (float)(height*ystep*2); } }
+      ret[i+1] = (float)(height*ystep); ret[i+7] = (float)(height*ystep*2);
+      if(ip>0) {
+        Vec3 a = arr_to_vec(&ret[i]); Vec3 b = arr_to_vec(&ret[i-apv]);
+        Vec3 c = arr_to_vec(&ret[i-apv*2]);
+        Vec3 anorm = norm_positive(a,b,c); Vec3 bnorm = norm_positive(c,b,a);
+        ret[i+3] = anorm.x; ret[i+4] = anorm.y; ret[i+5] = anorm.z;
+        ret[i+9] = bnorm.x; ret[i+10] = bnorm.y; ret[i+11] = bnorm.z; } } }
   return ret; }
 
 // ignore for now.
