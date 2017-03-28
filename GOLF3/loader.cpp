@@ -57,7 +57,10 @@ void load(World *w, int hole) { switch(hole) {
                              //einit(no_react,tree,0,50,
                              einit(no_react,ball(0.05,20),v3(0,0,0),0,1,21,false) });
     // create circles with diameters on the sides of a regular N-side polygon.
-    w->e[0].shader_id = create_program(sample_vs,sample_fs); break; } } }
+    w->e[0].shader_id = create_program(tree_vs,tree_fs);
+    glUseProgram(w->e[0].shader_id);
+    GLint _col = glGetUniformLocation(w->e[0].shader_id,"col");
+    glUniform3f(_col,0.5,0.5,0.); break; } } }
 
 void unload(World *w, int hole) { switch(hole) {
   case 0: { glDeleteVertexArrays(1,&w->e[0].vd.vao); } } }

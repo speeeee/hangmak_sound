@@ -131,3 +131,43 @@ static const GLchar *grass_fs = "#version 330\n"
   "  else if(in_curve(frag_itra,1.)) { color.g = 0.7; }\n"
   "  gl_FragColor = vec4(color.xyz+frag_pos.y*5.,1.); }\0";
 
+// ==== hole_1 ==== //
+static const GLchar *tree_vs = "#version 330\n"
+  "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
+  "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
+  "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform vec3 col;\n"
+  "out mat4 frag_model; out vec3 frag_col;\n"
+  "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
+  "void main() {\n"
+  "  frag_pos = position; frag_norm = norm; frag_col = col;\n"
+  "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
+/* DONE: add normals for each vertex to triangulate, scaling stride to 3*sizeof(GLfloat),
+   *       array is now made to fit the normal vectors, but the normal is not created yet.
+       : pass normals to vertex shader as (location = 1) and forward to fragment shader,
+       : perform lighting calculations. */
+/* CHANGES SO FAR:
+     add input vector 'norm' where (location = 1) (through glBindAttribLocation)
+     'norm' must be enabled and have been assigned by glVertexAttribPointer.
+   DONE* move location binding and attrib pointer assignment to isolated function. */
+
+// TODO: add first course with shader for the bounds of each type of terrain.
+// NOPE: add grass effect (perlin noise?).
+static const GLchar *tree_fs = "#version 330\n"
+  "uniform ivec2 u_res;\n"
+  //"uniform mat4 imvp;\n"
+  "uniform mat3 u_imod;\n"
+  "in mat4 frag_model;\n"
+  "in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_col;\n"
+  /*"void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
+  "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
+  "              (gl_DepthRange.far - gl_DepthRange.near);\n"
+  "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
+  "  vec4 pos = imvp*clip_pos;\n"*/
+  // as isz grows, the curve gets smaller.
+  "float curve_0(float x, float isz) {\n"
+  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
+  "void main() {\n"
+  "  vec3 light = normalize(vec3(0.,-1.,-1.));\n" // example light (0,-1,0)
+  "  float brightness = dot(-light,frag_norm);\n"
+  "  vec3 color = frag_col; vec3 p = frag_pos;\n"
+  "  gl_FragColor = vec4(color.rgb+(brightness-0.5)*0.25,1.); }\0";
