@@ -10,6 +10,7 @@
 
 #define GRAVITY (-0.0005)
 #define DEGRADE (0.6)
+#define STRIDE (6)
 
 typedef struct { float x; float y; float z; } Vec3;
 Vec3 v3(float,float,float);
@@ -83,6 +84,7 @@ typedef struct { Projectile p; // main 'ball' that is controlled.
                  int hole; } World;
 
 typedef std::function<float(float, float)> FuncXZ;
+typedef std::function<std::tuple<float,float>(float)> Parametric;
 typedef std::function<Projectile(World *, Projectile, Triangle, Projectile)> CollisionF;
 typedef std::function<int(Vec2)> BoundsF;
 
