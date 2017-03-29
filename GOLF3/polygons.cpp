@@ -112,12 +112,12 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
 
     std::vector<Triangle> btris;
     if(std::get<6>(ei[i])) { btris = to_triangles(tris,step); }
-    asadd(pos,&tris[0],tris.size(),6); // for stride.
+    asadd(pos,&tris[0],tris.size(),STRIDE); // for stride.
 
     // calculation for vaod.pos is dat.size()/stride
     //   (dat.size() is guaranteed to be a multiple of stride).
     ret.push_back(entity(pos,btris,std::vector<float>()
-                        ,vao_dat(dat.size()/6,nsteps,std::get<5>(ei[i]),vao)
+                        ,vao_dat(dat.size()/STRIDE,nsteps,std::get<5>(ei[i]),vao)
                         ,ex_bounds_2,cf,std::get<5>(ei[i]),0));
     /* append to dat vector tris */
     dat.reserve(dat.size()+tris.size());
@@ -129,7 +129,7 @@ std::vector<Entity> create_entities(std::vector<EntBase> ei) { std::vector<Entit
   // assume limit is 16.
   GLuint pos_attrib = 0; GLuint norm_attrib = 1;
   glEnableVertexAttribArray(pos_attrib); // attribute location, e.g. (location = 0) for position.
-  glVertexAttribPointer(pos_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT),0); // reminder: first argument requires
+  glVertexAttribPointer(pos_attrib,3,GL_FLOAT,GL_FALSE,STRIDE*sizeof(GL_FLOAT),0); // reminder: first argument requires
                                                     //   glBindAttribLocation(..).
   glEnableVertexAttribArray(norm_attrib);
   glVertexAttribPointer(norm_attrib,3,GL_FLOAT,GL_FALSE,6*sizeof(GL_FLOAT)
