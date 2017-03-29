@@ -158,14 +158,6 @@ static const GLchar *tree_fs = "#version 330\n"
   "uniform mat3 u_imod;\n"
   "in mat4 frag_model;\n"
   "in vec3 frag_pos; in vec3 frag_norm; in vec3 frag_col;\n"
-  /*"void main() { vec4 ndc_pos; ndc_pos.xy = (2.0*gl_FragCoord.xy)/(u_res.xy)-1;\n"
-  "  ndc_pos.z = (2.0*gl_FragCoord.z-gl_DepthRange.near-gl_DepthRange.far) /"
-  "              (gl_DepthRange.far - gl_DepthRange.near);\n"
-  "  ndc_pos.w = 1.0; vec4 clip_pos = ndc_pos / gl_FragCoord.w;\n"
-  "  vec4 pos = imvp*clip_pos;\n"*/
-  // as isz grows, the curve gets smaller.
-  "float curve_0(float x, float isz) {\n"
-  "  return (sqrt(1-pow(x,2.)/pow(2./isz,2.))+2/(1+exp(-6.*isz*x)))/(isz*2.); }\n"
   "void main() {\n"
   "  vec3 light = normalize(vec3(0.,-1.,-1.));\n" // example light (0,-1,0)
   "  float brightness = dot(-light,frag_norm);\n"

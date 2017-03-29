@@ -51,10 +51,14 @@ void load(World *w, int hole) { switch(hole) {
     w->e[0].shader_id = create_program(sample_vs,sample_fs);
     w->e[1].shader_id = create_program(grass_vs,grass_fs);
     for(int i=2;i<6;i++) { w->e[i].shader_id = w->e[1].shader_id; } break; }
-  case 1: { w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0,0,0),0.05);
-    w->e = create_entities({ einit(no_react,cyl_to_tris(test_cyl_0,M_PI/100.,0.05,0,201,50),v3(0,0,0)
-                                  ,0,50,201*2,false),
+  case 1: { w->p = projectile(v3(0,GRAVITY,0),v3(0,0,0),v3(0.65,1.,4.),0.05);
+    std::vector<float> tr = cyl_to_tris(test_cyl_0,M_PI/100.,0.05,0,201,25);
+    std::vector<float> cap = stride_copy(tr.begin(),tr.begin()+201*STRIDE*2,STRIDE*2,STRIDE);
+    for(int i=0;i<cap.size();i+=6) { cap[i+3] = 0; cap[i+4] = -1; cap[i+5] = 0; }
+    w->e = create_entities({ einit(no_react,tr,v3(0,0,0)
+                                  ,0,25,201*2,false),
                              //einit(no_react,tree,0,50,
+                             einit(no_react,cap,v3(0,0,0),0,1,201,false),
                              einit(no_react,ball(0.05,20),v3(0,0,0),0,1,21,false) });
     // create circles with diameters on the sides of a regular N-side polygon.
     w->e[0].shader_id = create_program(tree_vs,tree_fs);
