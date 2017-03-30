@@ -55,6 +55,7 @@ void load(World *w, int hole) { switch(hole) {
     std::vector<float> tr = cyl_to_tris(test_cyl_0,M_PI/100.,0.05,0,201,25);
     std::vector<float> cap = stride_copy(tr.begin(),tr.begin()+201*STRIDE*2,STRIDE*2,STRIDE);
     for(int i=0;i<cap.size();i+=6) { cap[i+3] = 0; cap[i+4] = -1; cap[i+5] = 0; }
+    asadd(v3(0,0.05*25,0),&cap[0],cap.size(),STRIDE);
     w->e = create_entities({ einit(no_react,tr,v3(0,0,0)
                                   ,0,25,201*2,false),
                              //einit(no_react,tree,0,50,

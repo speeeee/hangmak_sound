@@ -150,7 +150,7 @@ static const GLchar *tree_vs = "#version 330\n"
      'norm' must be enabled and have been assigned by glVertexAttribPointer.
    DONE* move location binding and attrib pointer assignment to isolated function. */
 
-// TODO: add first course with shader for the bounds of each type of terrain.
+// DONE: add first course with shader for the bounds of each type of terrain.
 // NOPE: add grass effect (perlin noise?).
 static const GLchar *tree_fs = "#version 330\n"
   "uniform ivec2 u_res;\n"
@@ -162,4 +162,7 @@ static const GLchar *tree_fs = "#version 330\n"
   "  vec3 light = normalize(vec3(0.,-1.,-1.));\n" // example light (0,-1,0)
   "  float brightness = dot(-light,frag_norm);\n"
   "  vec3 color = frag_col; vec3 p = frag_pos;\n"
+  // TODO: remove "magic numbers" which are related to the amount of slices of the tree.
+  "  if(length(vec2(p.xz))<0.625) {"
+  "    color = vec3(0.6,0.6,0.0)+(mod(length(vec2(p.xz)),0.625/5.)*5./0.625-0.5)*0.25; }\n" // 0.5 is radius.
   "  gl_FragColor = vec4(color.rgb+(brightness-0.5)*0.25,1.); }\0";
