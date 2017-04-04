@@ -76,7 +76,7 @@ static const GLchar *sample_fs = "#version 330\n"
   "    color.g = 0.9-ceil(mod(p.x,1.)-0.5)*0.1; }\n" // TODO: make entire section above nicer.
   "  gl_FragColor = vec4(color.rgb*brightness+0.2,1.); }\0";
 
-// TODO: add shading (1) and animation wrt wind (2).
+// DONE: add shading (1) and animation wrt wind (2).
 static const GLchar *grass_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
   "layout (location = 1) in vec3 norm; out vec3 frag_norm; out vec3 frag_itra;\n"
@@ -132,6 +132,7 @@ static const GLchar *grass_fs = "#version 330\n"
   "  gl_FragColor = vec4(color.xyz+frag_pos.y*5.,1.); }\0";
 
 // ==== hole_1 ==== //
+// TODO: implement some kind of binary-choice color to make tree look more textured.
 static const GLchar *tree_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
   "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
