@@ -12,7 +12,7 @@ float hole_0(float x, float z) { return 1./(2*(1+exp(-5*(-(z-3+pow(x-3.8,2.)/2.)
 float circ(float a, float x) { return pow(pow(a,2.)-pow(x,2.),0.5); }
 float test_cyl_0(float tht, float y) { /*return 0.05;*/
   float a = 2*M_PI/CIRCLES;
-  return 0.5+circ(a,fmod(tht,a)-a/2.); }
+  return 0.3+circ(a,fmod(tht,a)-a/2.)+circ(a,fmod(y,a)-a/2.); }
 
 // TODO: needs significant refactoring.
 std::vector<float> triangulate(FuncXZ f, float step, int nsteps) { int tsz;
@@ -163,10 +163,11 @@ std::vector<float> cyl_to_tris(FuncXZ cf, float tstep, float ystep, float lb, in
   std::vector<float> ret(tnsteps*height*fpg);
 
   for(int j=0;j<height;j++) {
-    for(int ip=0;ip<tnsteps;ip++) { float c = lb+(float)(ip*tstep); int i = ip*fpg;
-      float r = cf(c,(float)(height*ystep)); float x = r*cos(c); float z = r*sin(c); 
-      ret[i] = ret[i+6] = x; ret[i+2] = ret[i+8] = z;
-      ret[i+1] = (float)(height*ystep); ret[i+7] = (float)(height*ystep*2);
+    for(int ip=0;ip<tnsteps;ip++) { float c = lb+(float)(ip*tstep); int i = fpg*ip+fpg*j*tnsteps;
+      float r = cf(c,(float)(j*ystep)); float x = r*cos(c); float z = r*sin(c);
+      float r1 = cf(c,(float)((j+1)*ystep)); float x1 = r1*cos(c); float z1 = r1*sin(c); 
+      ret[i] = x; ret[i+6] = x1; ret[i+2] = z; ret[i+8] = z1;
+      ret[i+1] = (float)(j*ystep); ret[i+7] = (float)((j+1)*ystep);
       if(ip>0) {
         Vec3 a = arr_to_vec(&ret[i]); Vec3 b = arr_to_vec(&ret[i-apv]);
         Vec3 c = arr_to_vec(&ret[i-apv*2]);
