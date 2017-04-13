@@ -13,6 +13,8 @@ GLuint create_program(const GLchar *, const GLchar *);
 void load(World *, int);
 void unload(World *, int);
 
+void set_disp(GLuint, Vec3);
+
 /* ==== default ball shader ==== */
 // TODO: rewrite for circle drawing.  Translate circle based off of given uniform position vector.
 //     : rotate to always face camera.  Shade based off of global light.
@@ -137,11 +139,12 @@ static const GLchar *tree_vs = "#version 330\n"
   "layout (location = 0) in vec3 position; out vec3 frag_pos;\n"
   "layout (location = 1) in vec3 norm; out vec3 frag_norm;\n"
   "uniform mat4 model; uniform mat4 view; uniform mat4 projection; uniform vec3 col;\n"
+  "uniform vec3 disp;\n"
   "out mat4 frag_model; out vec3 frag_col;\n"
   "float samp_func(vec2 v) { return pow(v.x,2.); }\n"
   "void main() {\n"
   "  frag_pos = position; frag_norm = norm; frag_col = col;\n"
-  "  gl_Position = projection*view*model*vec4(position.xyz,1.0); }\0";
+  "  gl_Position = projection*view*model*vec4(disp+position.xyz,1.0); }\0";
 /* DONE: add normals for each vertex to triangulate, scaling stride to 3*sizeof(GLfloat),
    *       array is now made to fit the normal vectors, but the normal is not created yet.
        : pass normals to vertex shader as (location = 1) and forward to fragment shader,
@@ -169,5 +172,5 @@ static const GLchar *tree_fs = "#version 330\n"
   "  if(length(vec2(p.xz))<0.5) {"
   "    color = vec3(0.6,0.6,0.0)+(mod(length(vec2(p.xz)),0.625/5.)*5./0.625-0.4)*0.25; }\n" // 0.4 is radius.
   // TODO: make into actual Perlin noise.
-  "  else { color *= 1.-0.3*(int(mod(length(p)*171,2.))^13%2); }\n"
+  "  else { color *= 1.-0.3*(int(mod(length(p)*p.x*171,2.))^13%2); }\n"
   "  gl_FragColor = vec4(color.rgb+(brightness-0.5)*0.25,1.); }\0";
