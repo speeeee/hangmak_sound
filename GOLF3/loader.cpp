@@ -58,14 +58,22 @@ void load(World *w, int hole) { switch(hole) {
     asadd(v3(0,0.05*25,0),&cap[0],cap.size(),STRIDE);
     w->e = create_entities({ einit(no_react,tr,v3(0,0,0)
                                   ,0,125,201*2,false),
+                             einit(no_react,cyl_to_tris(test_cyl_0,M_PI/50.,0.02,0,101,63),v3(0,0,0)
+                                  ,0,63,101*2,false),
                              //einit(no_react,tree,0,50,
                              einit(no_react,cap,v3(0,0,0),0,1,201,false),
                              einit(no_react,ball(0.05,20),v3(0,0,0),0,1,21,false) });
     // create circles with diameters on the sides of a regular N-side polygon.
     w->e[0].shader_id = create_program(tree_vs,tree_fs);
+    w->e[1].shader_id = w->e[0].shader_id;
     glUseProgram(w->e[0].shader_id);
     GLint _col = glGetUniformLocation(w->e[0].shader_id,"col");
     glUniform3f(_col,0.5,0.5,0.); break; } } }
 
 void unload(World *w, int hole) { switch(hole) {
   case 0: { glDeleteVertexArrays(1,&w->e[0].vd.vao); } } }
+
+// requires that given shader program has vec3 named disp.
+void set_disp(GLuint prog, Vec3 v) {
+  GLint _disp = glGetUniformLocation(prog,"disp");
+  glUniform3f(_disp,v.x,v.y,v.z); }
