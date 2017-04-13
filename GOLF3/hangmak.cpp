@@ -125,10 +125,14 @@ void paint(World *w,GLuint default_program) {
       /*d_square(w->p.pos.x-0.05,w->p.pos.y-0.05,w->p.pos.z-0.05,0.1);*/
       d_triangulation_2(w->e[6].vd,GL_TRIANGLE_FAN); break; }
     case 1: { glUseProgram(w->e[0].shader_id);
+      // TODO: create distance-based function to decide which level-of-detail to use.
+      set_disp(w->e[1].shader_id,v3(0,0,0));
+      d_triangulation_2(w->e[1].vd,GL_TRIANGLE_STRIP);
+      set_disp(w->e[0].shader_id,v3(0,1.25,0));
       d_triangulation_2(w->e[0].vd,GL_TRIANGLE_STRIP);
-      d_triangulation_2(w->e[1].vd,GL_TRIANGLE_FAN);
+      d_triangulation_2(w->e[2].vd,GL_TRIANGLE_FAN);
       glUseProgram(default_program);
-      d_triangulation_2(w->e[2].vd,GL_TRIANGLE_FAN); break; } } }
+      d_triangulation_2(w->e[3].vd,GL_TRIANGLE_FAN); break; } } }
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
   glDepthFunc(GL_LESS);
