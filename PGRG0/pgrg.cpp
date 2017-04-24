@@ -6,7 +6,7 @@
 #define DEBUG_MODE 1
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
-  glDepthFunc(GL_LESS);
+  glDepthFunc(GL_LESS); glEnable(GL_CULL_FACE);
   glDisable(GL_LIGHTING); /* temporary */ glViewport(0,0,window->getSize().x,window->getSize().y);
   //glMatrixMode(GL_PROJECTION); glLoadIdentity();
   float ratio = window->getSize().x/window->getSize().y;
