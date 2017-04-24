@@ -7,7 +7,6 @@
 // written in row-major order, so transposition is required.
 
 typedef struct { std::vector<float> dat; int r; int c; } Matrix;
-typedef struct { float x; float y; float z; } Vec3; // temp
 
 Matrix matrix(std::vector<float>, int, int);
 // 0x0 identity matrix represents error.

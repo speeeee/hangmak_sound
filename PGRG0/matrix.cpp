@@ -1,8 +1,6 @@
 #include "matrix.hpp"
 #include <cmath>
 
-Vec3 v3(float x, float y, float z) { return (Vec3) { x, y, z }; }
-
 Matrix matrix(std::vector<float> dat, int r, int c) { return (Matrix) { dat, r, c }; }
 // 0x0 identity matrix represents error.
 Matrix id_mat(int sz) { Matrix a; a.r = a.c = sz;
@@ -10,7 +8,7 @@ Matrix id_mat(int sz) { Matrix a; a.r = a.c = sz;
   a.dat = dat; return a; }
 Matrix vec3_to_mat(Vec3 v, float w) { Matrix a; a.r = 4; a.c = 1; std::vector<float> dat(a.r*a.c,0.);
   dat[0] = v.x; dat[1] = v.y; dat[2] = v.z; dat[3] = w; a.dat = dat; return a; }
-Vec3 mat_to_vec3(Matrix a) { return v3(a.dat[0],a.dat[1],a.dat[2]); }
+Vec3 mat_to_vec3(Matrix a) { return Vec3(a.dat[0],a.dat[1],a.dat[2]); }
 
 Matrix madd(Matrix a, Matrix b) { Matrix ret = matrix(std::vector<float>(a.r*a.c),a.r,a.c);
   for(int i=0;i<b.r*b.c;i++) { ret.dat[i] = a.dat[i]+b.dat[i]; } return ret; }
