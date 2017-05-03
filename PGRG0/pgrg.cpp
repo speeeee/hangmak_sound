@@ -2,8 +2,14 @@
 
 #include "world.hpp"
 #include "shaders.hpp"
+#include "util.hpp"
 
 #define DEBUG_MODE 1
+
+/*static const GLchar *dvs = "#version 330\n"
+  "layout (location = 0) in vec3 position;\n"
+  "layout (location = 1) in vec3 color;\n"
+  "layout (location = 2) in vec3 norm;\n"*/
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
   glDepthFunc(GL_LESS); glEnable(GL_CULL_FACE);
