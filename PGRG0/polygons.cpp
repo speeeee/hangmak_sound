@@ -36,4 +36,7 @@ std::vector<float> triangle_strip_surface(FuncXZ f, float xstep, float zstep, in
   auto a_cols = interp_stride(a,cols,a.size(),1);
   // TODO: create normals from triangulation.
   auto a_cols_norms = interp_stride(a_cols,std::vector<Vec3>(a.size(),Vec3(0,0,0)),a.size(),2);
+  // adds degenerate triangle to connect rows.
+  for(int i=2;i<znsteps-1;i++) { int ind = i*xnsteps*3;
+    Vec3 pos = a_cols_norms[ind]; a_cols_norms.insert(a_cols_norms.begin()+ind,pos); }
   return flatten(a_cols_norms); }
