@@ -9,7 +9,7 @@ std::vector<Entity> create_entities(std::vector<std::vector<float>> v) {
     dat.insert(dat.end(),v[i].begin(),v[i].end());
     // create entity from array.  v[i]'s size is guaranteed to be a multiple of STRIDE.
     //   dat's size is guaranteed to be a multiple of v[i]'s size and by extension STRIDE.
-    ret.push_back(Entity(VAOdat(dat.size()/STRIDE,v[i].size()/STRIDE,vao))); }
+    ret.push_back(Entity(VAOdat(dat.size()/STRIDE,v[i].size()/STRIDE,vao),0)); }
   glBindVertexArray(vao);
   GLuint buf; glGenBuffers(1,&buf);
   glBindBuffer(GL_ARRAY_BUFFER, buf);
