@@ -3,13 +3,13 @@
 #include "world.hpp"
 #include "shaders.hpp"
 #include "util.hpp"
+#include "polygons.hpp"
+
+#include <cstdio>
 
 #define DEBUG_MODE 1
 
-/*static const GLchar *dvs = "#version 330\n"
-  "layout (location = 0) in vec3 position;\n"
-  "layout (location = 1) in vec3 color;\n"
-  "layout (location = 2) in vec3 norm;\n"*/
+float fun(float x, float z) { return sin(x*z); }
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
   glDepthFunc(GL_LESS); glEnable(GL_CULL_FACE);
@@ -25,6 +25,16 @@ int main() { sf::ContextSettings settings;
   sf::Window window(sf::VideoMode(800,800), "pgrg", sf::Style::Default, settings);
   window.setVerticalSyncEnabled(true); glewExperimental = GL_TRUE;
   glewInit();
+
+  Matrix model = id_mat(4); Matrix view = translate(id_mat(4),Vec3(0,0,-1.0));
+  Matrix projection = gl_init(&window);
+
+  GLuint default_program = create_program(dvs,dfs);
+  mvp_set(default_program,model,view,projection);
+
+  std::vector<Entity> e = 
+    create_entities({ triangle_strip_surface(fun,0.1,0.1,100,100,std::vector<Vec3>(100*100,Vec3(0,0,0))) });
+  e[0].shader_id = default_program;
 
   int t = 0;
   for(bool r = true;r;t++) {
