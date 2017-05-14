@@ -54,7 +54,7 @@ Matrix translate(Matrix a, Vec3 t) {
     , 0, 0, 0, 1 };
   return mmul(matrix(dat,4,4),a); }
 
-/*Matrix rotate(Matrix a, float rad, Vec3 tt) {
+Matrix rotate(Matrix a, float rad, Vec3 tt) {
   float c = cos(rad); float s = sin(rad); Vec3 t = unit(tt);
   std::vector<float> dat =
     { powf(t.x,2.)*(1-c)+c, t.x*t.y*(1-c)-t.z*s , t.x*t.z*(1-c)+t.y*s , 0
@@ -63,7 +63,7 @@ Matrix translate(Matrix a, Vec3 t) {
     , 0                   , 0                   , 0                   , 1 };
   return mmul(matrix(dat,4,4),a); }
 
-Matrix transpose(Matrix a) { std::vector<float> dat(a.r*a.c,0.);
+/*Matrix transpose(Matrix a) { std::vector<float> dat(a.r*a.c,0.);
   for(int j=0;j<a.c;j++) { for(int i=0;i<a.r;i++) { dat[i+j*a.r] = a.dat[j+i*a.c]; } }
   return matrix(dat,a.c,a.r); }
 
