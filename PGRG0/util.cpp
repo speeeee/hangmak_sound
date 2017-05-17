@@ -4,12 +4,13 @@
 std::vector<Entity> create_entities(std::vector<std::vector<float>> v) {
   std::vector<Entity> ret; std::vector<float> dat;
   GLuint vao; glGenVertexArrays(1,&vao);
-  for(int i=0;i<v.size();i++) { // load array into total array.
+  for(int i=0;i<v.size();i++) { int pos = dat.size()/STRIDE; // load array into total array.
     dat.reserve(dat.size()+v[i].size());
     dat.insert(dat.end(),v[i].begin(),v[i].end());
     // create entity from array.  v[i]'s size is guaranteed to be a multiple of STRIDE.
     //   dat's size is guaranteed to be a multiple of v[i]'s size and by extension STRIDE.
-    ret.push_back(Entity(VAOdat(dat.size()/STRIDE,v[i].size()/STRIDE,vao),0)); }
+    ret.push_back(Entity(VAOdat(pos,v[i].size()/STRIDE,vao),0)); }
+  //for(int i=0;i<dat.size();i++) { printf("%g ",dat[i]); }
   glBindVertexArray(vao);
   GLuint buf; glGenBuffers(1,&buf);
   glBindBuffer(GL_ARRAY_BUFFER, buf);
