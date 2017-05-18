@@ -17,14 +17,18 @@ float fun(float x, float z) { return sin(x*z); }
 // d_verts: draws from VAO:
 void d_verts(VAOdat vd, GLenum mode) {
   glBindVertexArray(vd.vao); glDrawArrays(mode,vd.disp,vd.sz); }
+// TODO: possibly make better fix?
+void d_rows(VAOdat vd, int xnsteps, int znsteps, GLenum mode) {
+  glBindVertexArray(vd.vao);
+  for(int i=0;i<znsteps;i++) { glDrawArrays(mode,vd.disp+i*xnsteps*2,xnsteps*2); } }
 
 void paint(std::vector<Entity> e) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glUseProgram(e[0].shader_id);
-  d_verts(e[0].vd,GL_TRIANGLE_STRIP); }
+  d_rows(e[0].vd,10,10,GL_TRIANGLE_STRIP); }
 
 Matrix gl_init(sf::Window *window) { glEnable(GL_DEPTH_TEST); glDepthMask(GL_TRUE); glClearDepth(1.f);
-  glDepthFunc(GL_LESS); glDisable(GL_CULL_FACE);
+  glDepthFunc(GL_LESS); glEnable(GL_CULL_FACE);
   glDisable(GL_LIGHTING); /* temporary */ glViewport(0,0,window->getSize().x,window->getSize().y);
   //glMatrixMode(GL_PROJECTION); glLoadIdentity();
   float ratio = window->getSize().x/window->getSize().y;
@@ -59,7 +63,7 @@ int main() { sf::ContextSettings settings;
 
   std::vector<Entity> ei = 
     create_entities({ triangle_strip_surface(fun,0.1,0.1,10,10
-                        ,std::vector<Vec3>(180/* 2*(xsz*ysz - xnsteps) */,Vec3(1,1,1))) });
+                        ,std::vector<Vec3>(100/* 2*(xsz*ysz - xnsteps) */,Vec3(1,1,1))) });
   ei[0].shader_id = default_program;
 
   int t = 0;
