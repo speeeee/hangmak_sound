@@ -1,5 +1,7 @@
 #include "polygons.hpp"
 
+#define ATTRIBS (3)
+
 std::vector<Vec3> triangulate(FuncXZ f, float xstep, float zstep, int xnsteps, int znsteps) {
   std::vector<Vec3> ret(xnsteps*znsteps);
   for(int j=0;j<znsteps;j++) {
@@ -34,10 +36,17 @@ std::vector<float> flatten(std::vector<Vec3> a) { std::vector<float> ret;
 std::vector<float> triangle_strip_surface(FuncXZ f, float xstep, float zstep, int xnsteps
                                          ,int znsteps, std::vector<Vec3> cols) {
   std::vector<Vec3> a = interp_tris(triangulate(f,xstep,zstep,xnsteps,znsteps),xnsteps,znsteps);
-  auto a_cols = interp_stride(a,cols,a.size(),1);
+  std::vector<Vec3> cols_i = interp_tris(cols,xnsteps,znsteps);
+  auto a_cols = interp_stride(a,cols_i,a.size(),1);
   // TODO: create normals from triangulation.
   auto a_cols_norms = interp_stride(a_cols,std::vector<Vec3>(a.size(),Vec3(0,0,0)),a.size(),2);
   // the following adds degenerate triangle to connect rows.
-  /*for(int i=2;i<znsteps-1;i++) { int ind = i*xnsteps*3;
-    Vec3 pos = a_cols_norms[ind]; a_cols_norms.insert(a_cols_norms.begin()+ind,pos); }*/
+  // TODO: fix degenerate triangles
+  /*for(int ind=2*xnsteps*ATTRIBS;ind<a_cols_norms.size();ind+=2*xnsteps*ATTRIBS) {
+    p_vec3(a_cols_norms[ind]); p_vec3(a_cols_norms[ind+1]); p_vec3(a_cols_norms[ind+2]);
+    p_vec3(a_cols_norms[ind-3]); p_vec3(a_cols_norms[ind-2]); p_vec3(a_cols_norms[ind-1]);
+    Vec3 pos = Vec3(a_cols_norms[ind].x,a_cols_norms[ind-ATTRIBS].y,a_cols_norms[ind].z);
+    std::vector<Vec3> e = { a_cols_norms[ind-3], a_cols_norms[ind-2], a_cols_norms[ind-1]
+                          , pos, Vec3(0,0,0), Vec3(0,0,0), pos, Vec3(0,0,0), Vec3(0,0,0) };
+    a_cols_norms.insert(a_cols_norms.begin()+ind,e.begin(),e.end()); ind+=ATTRIBS*3; }*/
   return flatten(a_cols_norms); }
