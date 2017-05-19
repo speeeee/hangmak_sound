@@ -10,6 +10,9 @@ std::vector<T> interpolate(T *a, T *b, int n);
 
 std::vector<float> flatten(std::vector<Vec3> a);
 
-std::vector<float> triangle_strip_surface(FuncXZ f, float xstep, float zstep, int xnsteps
+std::vector<float> triangle_strip_surface(std::vector<Vec3> f, int xnsteps
                                          ,int znsteps, std::vector<Vec3> cols);
+std::vector<float> triangle_strip_surface_function(FuncXZ f, float xstep, float zstep
+                                                  ,int xnsteps, int znsteps, std::vector<Vec3> cols);
+
 #endif

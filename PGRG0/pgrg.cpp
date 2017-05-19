@@ -62,7 +62,7 @@ int main() { sf::ContextSettings settings;
   mvp_set(default_program,model,view,projection);
 
   std::vector<Entity> ei = 
-    create_entities({ triangle_strip_surface(fun,0.1,0.1,10,10
+    create_entities({ triangle_strip_surface_function(fun,0.1,0.1,10,10
                         ,std::vector<Vec3>(100/* 2*(xsz*ysz - xnsteps) */,Vec3(1,1,1))) });
   ei[0].shader_id = default_program;
 
