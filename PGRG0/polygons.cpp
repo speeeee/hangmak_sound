@@ -34,12 +34,13 @@ std::vector<float> flatten(std::vector<Vec3> a) { std::vector<float> ret;
   return ret; }
 
 std::vector<float> triangle_strip_surface(std::vector<Vec3> f, int xnsteps, int znsteps
-                                         ,std::vector<Vec3> cols) {
+                                         ,std::vector<Vec3> cols,std::vector<Vec3> norms) {
   std::vector<Vec3> a = interp_tris(f,xnsteps,znsteps);
   std::vector<Vec3> cols_i = interp_tris(cols,xnsteps,znsteps);
+  std::vector<Vec3> norms_i = interp_tris(norms,xnsteps,znsteps);
   auto a_cols = interp_stride(a,cols_i,a.size(),1);
   // TODO: create normals from triangulation.
-  auto a_cols_norms = interp_stride(a_cols,std::vector<Vec3>(a.size(),Vec3(0,0,0)),a.size(),2);
+  auto a_cols_norms = interp_stride(a_cols,norms_i,a.size(),2);
   // the following adds degenerate triangle to connect rows.
   // TODO: fix degenerate triangles
   /*for(int ind=2*xnsteps*ATTRIBS;ind<a_cols_norms.size();ind+=2*xnsteps*ATTRIBS) {
@@ -53,4 +54,8 @@ std::vector<float> triangle_strip_surface(std::vector<Vec3> f, int xnsteps, int 
 
 std::vector<float> triangle_strip_surface_function(FuncXZ f, float xstep, float zstep
                                                   ,int xnsteps, int znsteps, std::vector<Vec3> cols) {
-  return triangle_strip_surface(triangulate(f,xstep,zstep,xnsteps,znsteps),xnsteps,znsteps,cols); }
+  std::vector<Vec3> norms(xnsteps*znsteps);
+  for(int i=0;i<xnsteps*znsteps;i++) { norms[i] =
+    unit(-1*cross(Vec3(xstep,f(i%xnsteps*xstep+xstep,i/znsteps*zstep),0)
+                 ,Vec3(0,f(i%xnsteps*xstep,i/znsteps*zstep+xstep),xstep))); }
+  return triangle_strip_surface(triangulate(f,xstep,zstep,xnsteps,znsteps),xnsteps,znsteps,cols,norms); }
